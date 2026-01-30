@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Пульс мережі</h2>
+
+<div class="card">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 1px solid var(--border);">
+                <th style="padding: 0.5rem;">Тип</th>
+                <th style="padding: 0.5rem;">Дій</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name, count in stats %}
+            <tr>
+                <td style="padding: 0.5rem;">{{ name }}</td>
+                <td style="padding: 0.5rem; font-weight: bold;">{{ count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

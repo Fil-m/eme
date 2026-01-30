@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{ t('nav_knowledge') }} (Knowledge Base)</h2>
+<p class="meta">{{ t('read_knowledge_desc') }}</p>
+
+<div class="card">
+    <div style="display: grid; gap: 0.5rem;">
+        {% for page in pages %}
+        <a href="/read/{{ page.slug }}"
+            style="display: block; padding: 1rem; background: #2a2a2a; color: white; text-decoration: none; border-radius: 4px; border: 1px solid #333;">
+            <strong style="font-size: 1.1rem;">{{ page.title }}</strong>
+            <span style="float: right; color: #777;">➔</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

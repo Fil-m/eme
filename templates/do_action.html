@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{ type.name }}</h2>
+<p class="meta">{{ type.description }}</p>
+
+<form method="POST" class="card">
+    {% for field in schema.fields %}
+    <label>{{ field.label or field.name }}</label>
+    <input type="{{ field.type or 'text' }}" name="{{ field.name }}" placeholder="..." required>
+    {% endfor %}
+
+    <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+        <button type="submit" class="btn">Зафіксувати</button>
+        <a href="/types" class="btn"
+            style="background: transparent; border: 1px solid var(--border); color: var(--text);">Скасувати</a>
+    </div>
+</form>
+
+{% endblock %}

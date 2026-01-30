@@ -1,0 +1,20 @@
+# Database
+eme.db
+instance/
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Generated files
+bundle.zip
+eme_bundle.zip
+
+# IDEs
+.vscode/
+.idea/

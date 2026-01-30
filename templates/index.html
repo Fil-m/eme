@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2>{{ t('actions_title') }}</h2>
+    <a href="/types" class="btn">{{ t('btn_add_action') }}</a>
+</div>
+
+{% if not actions %}
+<div class="card" style="text-align: center; padding: 2rem;">
+    <p>{{ t('no_actions') }}</p>
+    <a href="/types" class="btn">{{ t('btn_add_action') }}</a>
+</div>
+{% endif %}
+
+<div class="action-list">
+    {% for action in actions %}
+    <div class="card" style="border-left: 4px solid var(--{{ action.color }});">
+        <div class="meta">
+            <strong>{{ action.who }}</strong> • {{ action.type }} • {{ action.when }}
+        </div>
+        <div style="margin-top: 0.5rem;">
+            {% for key, val in action.data.items() %}
+            {% if key not in ['csrf'] %}
+            <div><span style="color: var(--muted);">{{ key }}:</span> {{ val }}</div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

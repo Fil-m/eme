@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Типи дій</h2>
+<p class="meta">Обери тип, щоб додати дію, або створи новий.</p>
+
+<div
+    style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); margin-bottom: 2rem;">
+    {% for type in types %}
+    <a href="/do/{{ type.id }}" class="card"
+        style="text-decoration: none; color: inherit; display: block; border: 1px solid var(--border);">
+        <strong>{{ type.name }}</strong>
+        <div class="meta" style="font-size: 0.8rem; margin-top: 0.5rem;">{{ type.description or '...' }}</div>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Simple inline create -->
+<div class="card">
+    <h3>Створити новий ген (тип)</h3>
+    <form action="/types/new" method="POST">
+        <input name="name" placeholder="Назва (напр. Волонтерство)" required>
+        <input name="description" placeholder="Короткий опис">
+
+        <details>
+            <summary class="meta" style="cursor: pointer; margin-bottom: 0.5rem;">Налаштувати поля (JSON)</summary>
+            <p class="meta">Залиште пустим для стандарту (Кому, Що).</p>
+            <textarea name="schema" rows="4" style="font-family: monospace;">{"fields": [
+  {"name": "recipient", "label": "Кому"},
+  {"name": "details", "label": "Деталі"}
+]}</textarea>
+        </details>
+
+        <button class="btn" style="margin-top: 0.5rem;">Створити Тип</button>
+    </form>
+</div>
+
+{% endblock %}

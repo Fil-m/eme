@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Хто ти?</h2>
+<p class="meta">Це імʼя буде видно біля кожної твоєї дії.</p>
+
+<form method="POST" class="card">
+    <label>Твоє імʼя або псевдо</label>
+    <input type="text" name="name" value="{{ node.name if node.name != 'New Node' else '' }}"
+        placeholder="Наприклад: Тарас">
+
+    <label class="meta">ID пристрою (автоматичний)</label>
+    <input type="text" value="{{ node.device_id }}" disabled style="color: grey;">
+
+    <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Зберегти</button>
+</form>
+
+<div class="card" style="margin-top: 2rem;">
+    <h3>Твій внесок</h3>
+    <p>Дій зафіксовано: {{ node.actions|length }}</p>
+    <p>Типів створено: {{ node.created_types|length }}</p>
+</div>
+
+{% endblock %}

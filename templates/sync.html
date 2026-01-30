@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{ t('sync_title') }}</h2>
+
+<div class="card" style="border-color: var(--primary); text-align: center;">
+    <h3 style="margin-top: 0;">{{ t('sync_my_addr') }}</h3>
+    <code
+        style="display: block; background:black; padding: 0.5rem; font-size: 1.1rem; color: #0f0; margin-bottom: 1rem;">{{ my_address }}</code>
+
+    <div style="background: white; padding: 0.5rem; border-radius: 8px; display: inline-block;">
+        <img src="/qr?text={{ quote(my_address) }}" width="180" height="180">
+    </div>
+    <p class="meta">{{ t('sync_scan_qr') }}</p>
+</div>
+
+{% if msg %}
+<div class="card" style="background: #1e3a1e; border: 1px solid #4caf50;">
+    {{ msg }}
+</div>
+{% endif %}
+
+<form method="POST" class="card">
+    <h3>{{ t('sync_pull_title') }}</h3>
+    <p class="meta">{{ t('sync_enter_addr') }}</p>
+
+    <label>{{ t('sync_my_addr') }}</label>
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+        <input type="text" id="peer_address" name="peer_address" placeholder="http://192.168..." required
+            style="flex: 1;">
+        <button type="button" class="btn" id="start-scan"
+            style="background: var(--surface); border: 1px solid var(--border);">{{ t('scan_btn') }}</button>
+    </div>
+
+    <div id="reader" style="width: 100%; display: none; margin-bottom: 1rem;"></div>
+    <p id="scan-error" style="color: red; display: none; margin-bottom: 1rem;"></p>
+
+    <button type="submit" class="btn">{{ t('sync_btn') }}</button>
+</form>
+
+<script src="/static/js/html5-qrcode.min.js"></script>
+<script>
+    const html5QrCode = new Html5Qrcode("reader");
+    const startBtn = document.getElementById("start-scan");
+    const readerDiv = document.getElementById("reader");
+    const errorMsg = document.getElementById("scan-error");
+    const input = document.getElementById("peer_address");
+    let isScanning = false;
+
+    startBtn.addEventListener("click", () => {
+        if (isScanning) {
+            html5QrCode.stop().then(() => {
+                isScanning = false;
+                readerDiv.style.display = "none";
+                startBtn.innerText = "{{ t('scan_btn') }}";
+            });
+            return;
+        }
+
+        readerDiv.style.display = "block";
+        errorMsg.style.display = "none";
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            // Success
+            input.value = decodedText;
+            html5QrCode.stop().then(() => {
+                isScanning = false;
+                readerDiv.style.display = "none";
+                startBtn.innerText = "{{ t('scan_btn') }}";
+            });
+        }, (errorMessage) => {
+            // parse error, ignore
+        })
+            .then(() => {
+                isScanning = true;
+                startBtn.innerText = "{{ t('stop_scan_btn') }}";
+            })
+            .catch((err) => {
+                console.error(err);
+                readerDiv.style.display = "none";
+                errorMsg.innerText = "{{ t('cam_error') }}";
+                errorMsg.style.display = "block";
+            });
+    });
+</script>
+
+<div class="card">
+    <h3>{{ t('sync_how_title') }}</h3>
+    <p class="meta">{{ t('sync_how_desc') }}</p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{ t('install_title') }}</h2>
+<p class="meta">{{ t('install_desc') }}</p>
+
+<div class="card" style="border-left: 4px solid var(--primary);">
+    <h3>{{ t('termux_instr') }}</h3>
+    <ol>
+        <li>Install <strong>Termux</strong> (F-Droid)</li>
+        <li>Run: <code>pkg update && pkg install python</code></li>
+    </ol>
+
+    <div
+        style="background: #000; padding: 1rem; border-radius: 4px; overflow-x: auto; font-family: monospace; color: #0f0; margin: 1rem 0;">
+        curl -O {{ request.host_url }}install.sh && bash install.sh
+    </div>
+
+    <p style="text-align: center; margin-bottom: 0.5rem;">{{ t('qr_install_label') }}</p>
+    <div style="text-align: center; background: white; padding: 1rem; border-radius: 8px; display: inline-block;">
+        <img src="/qr?text={{ quote('curl -O ' + request.host_url + 'install.sh && bash install.sh') }}" width="200"
+            height="200">
+    </div>
+</div>
+
+<div class="card">
+    <h3>{{ t('win_instr') }}</h3>
+    <p>1. <a href="/bundle.zip" style="color: var(--primary);">Download bundle.zip</a></p>
+    <p>2. Unzip & run <code>python app.py</code></p>
+</div>
+
+{% endblock %}
