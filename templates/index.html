@@ -23,7 +23,14 @@
         <div style="margin-top: 0.5rem;">
             {% for key, val in action.data.items() %}
             {% if key not in ['csrf'] %}
+            {% if key in ['photo', 'image', 'picture', 'pic'] and val %}
+            <div style="margin-top: 0.5rem;">
+                <img src="/api/blob/{{ val }}"
+                    style="max-width: 100%; border-radius: 4px; border: 1px solid var(--border);">
+            </div>
+            {% else %}
             <div><span style="color: var(--muted);">{{ key }}:</span> {{ val }}</div>
+            {% endif %}
             {% endif %}
             {% endfor %}
         </div>

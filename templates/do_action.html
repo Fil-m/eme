@@ -5,10 +5,14 @@
 <h2>{{ type.name }}</h2>
 <p class="meta">{{ type.description }}</p>
 
-<form method="POST" class="card">
+<form method="POST" class="card" enctype="multipart/form-data">
     {% for field in schema.fields %}
     <label>{{ field.label or field.name }}</label>
+    {% if field.type == 'image' %}
+    <input type="file" name="{{ field.name }}" accept="image/*">
+    {% else %}
     <input type="{{ field.type or 'text' }}" name="{{ field.name }}" placeholder="..." required>
+    {% endif %}
     {% endfor %}
 
     <div style="margin-top: 1rem; display: flex; gap: 1rem;">

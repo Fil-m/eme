@@ -21,6 +21,92 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 db = SQLAlchemy(app)
 
+# --- Crypto Setup (Phase 2) ---
+import cryptography
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization
+from cryptography.exceptions import InvalidSignature
+import base64
+import urllib.parse
+
+KEYS_DIR = "keys"
+PRIV_KEY_PATH = os.path.join(KEYS_DIR, "private_key.pem")
+PUB_KEY_PATH = os.path.join(KEYS_DIR, "public_key.pem")
+
+def load_or_generate_keys():
+    if not os.path.exists(KEYS_DIR):
+        os.makedirs(KEYS_DIR)
+    
+    if os.path.exists(PRIV_KEY_PATH):
+        with open(PRIV_KEY_PATH, "rb") as f:
+            private_key = serialization.load_pem_private_key(f.read(), password=None)
+        with open(PUB_KEY_PATH, "rb") as f:
+            public_key = serialization.load_pem_public_key(f.read())
+    else:
+        print("Generating new ECDSA keys...")
+        private_key = ec.generate_private_key(ec.SECP256R1())
+        public_key = private_key.public_key()
+        
+        # Save Private
+        with open(PRIV_KEY_PATH, "wb") as f:
+            f.write(private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            ))
+            
+        # Save Public
+        with open(PUB_KEY_PATH, "wb") as f:
+            f.write(public_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            ))
+            
+    return private_key, public_key
+
+try:
+    MY_PRIV_KEY, MY_PUB_KEY = load_or_generate_keys()
+except Exception as e:
+    print(f"Crypto Init Error: {e}")
+    MY_PRIV_KEY, MY_PUB_KEY = None, None
+
+def get_my_public_key_b64():
+    if not MY_PUB_KEY: return None
+    pem = MY_PUB_KEY.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    return base64.b64encode(pem).decode('utf-8')
+
+def sign_payload(data_str):
+    """Sign a string with my private key, return base64 signature"""
+    if not MY_PRIV_KEY: return None
+    signature = MY_PRIV_KEY.sign(
+        data_str.encode('utf-8'),
+        ec.ECDSA(hashes.SHA256())
+    )
+    return base64.b64encode(signature).decode('utf-8')
+
+def verify_signature(pub_key_b64, data_str, signature_b64):
+    try:
+        if not pub_key_b64 or not signature_b64:
+            return False
+            
+        target_pub_key_bytes = base64.b64decode(pub_key_b64)
+        target_pub_key = serialization.load_pem_public_key(target_pub_key_bytes)
+        
+        signature_bytes = base64.b64decode(signature_b64)
+        target_pub_key.verify(
+            signature_bytes,
+            data_str.encode('utf-8'),
+            ec.ECDSA(hashes.SHA256())
+        )
+        return True
+    except Exception as e:
+        print(f"Sig Verify Failed: {e}")
+        return False
+
 # --- MODELS ---
 
 class Node(db.Model):
@@ -28,6 +114,7 @@ class Node(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     device_id = db.Column(db.String(64), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=True)
+    public_key = db.Column(db.Text, nullable=True) # Phase 2: Security
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -51,6 +138,7 @@ class Action(db.Model):
     action_type_id = db.Column(db.String(36), db.ForeignKey('action_types.id'), nullable=False)
     node_id = db.Column(db.String(36), db.ForeignKey('nodes.id'), nullable=False)
     payload = db.Column(db.Text, nullable=False) # JSON with actual data
+    signature = db.Column(db.Text, nullable=True) # Phase 2: Security
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -72,6 +160,13 @@ class Page(db.Model):
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Blob(db.Model):
+    __tablename__ = 'blobs'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    data = db.Column(db.LargeBinary, nullable=False)
+    mime_type = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # --- HELPERS ---
 
@@ -118,6 +213,12 @@ def identify_node():
         if node:
             session["node_id"] = node.id
             node.last_seen = datetime.utcnow()
+            
+            # Phase 2: Ensure Public Key is recorded
+            pk = get_my_public_key_b64()
+            if pk and node.public_key != pk:
+                node.public_key = pk
+                
             db.session.commit()
     
     # If no cookie, we wait until a view logic handles it or we redirect to a setup/welcome if needed
@@ -133,6 +234,12 @@ def index():
         # We assign a device_id and create a Node immediately (Implicit Onboarding)
         new_device_id = str(uuid.uuid4())
         new_node = Node(device_id=new_device_id, name="New Node")
+        
+        # Phase 2: Set Public Key
+        pk = get_my_public_key_b64()
+        if pk:
+            new_node.public_key = pk
+            
         db.session.add(new_node)
         db.session.commit()
         
@@ -402,13 +509,30 @@ def do_action(type_id):
         payload_data = {}
         for field in schema.get("fields", []):
             fname = field.get("name")
-            fval = request.form.get(fname)
-            payload_data[fname] = fval
+            ftype = field.get("type", "text")
             
+            if ftype == "image":
+                file = request.files.get(fname)
+                if file and file.filename:
+                    # Save to Blob table
+                    new_blob = Blob(
+                        data=file.read(),
+                        mime_type=file.content_type
+                    )
+                    db.session.add(new_blob)
+                    db.session.flush() # Get ID
+                    payload_data[fname] = new_blob.id
+            else:
+                fval = request.form.get(fname)
+                payload_data[fname] = fval
+            
+        payload_json = json.dumps(payload_data)
+        
         new_action = Action(
             action_type_id=act_type.id,
             node_id=node.id,
-            payload=json.dumps(payload_data)
+            payload=payload_json,
+            signature=sign_payload(payload_json) # Phase 2
         )
         db.session.add(new_action)
         db.session.commit()
@@ -512,6 +636,11 @@ python app.py
 """
     return Response(script, mimetype='text/plain')
 
+@app.route("/api/blob/<blob_id>")
+def get_blob(blob_id):
+    blob = Blob.query.get_or_404(blob_id)
+    return Response(blob.data, mimetype=blob.mime_type)
+
 @app.route("/bundle.zip")
 def download_bundle():
     # Create a zip of app.py, templates, and eme.db in memory
@@ -549,6 +678,7 @@ def sync_export_api():
     data = {
         "nodes": [{
             "id": n.id, "device_id": n.device_id, "name": n.name, 
+            "public_key": n.public_key, # Phase 2
             "created_at": n.created_at.isoformat(), "last_seen": n.last_seen.isoformat()
         } for n in nodes],
         "types": [{
@@ -557,7 +687,9 @@ def sync_export_api():
         } for t in types],
         "actions": [{
             "id": a.id, "type_id": a.action_type_id, "node_id": a.node_id, 
-            "payload": a.payload, "created_at": a.created_at.isoformat()
+            "payload": a.payload, 
+            "signature": a.signature, # Phase 2
+            "created_at": a.created_at.isoformat()
         } for a in actions],
         "pages": [{
             "id": p.id, "slug": p.slug, "title": p.title, "content": p.content,
@@ -597,6 +729,7 @@ def merge_db(data):
             id=remote_id,
             device_id=dev_id,
             name=n_data["name"],
+            public_key=n_data.get("public_key"), # Phase 2
             created_at=datetime.fromisoformat(n_data["created_at"]),
             last_seen=datetime.fromisoformat(n_data["last_seen"])
         )
@@ -649,11 +782,21 @@ def merge_db(data):
         if not Node.query.get(local_node_id):
              continue
 
+        # Phase 2: Verify Signature if Public Key is known
+        # Get public key of the node that created this action
+        creator_node = Node.query.get(local_node_id)
+        if creator_node and creator_node.public_key:
+            sig = a_data.get("signature")
+            if not verify_signature(creator_node.public_key, a_data["payload"], sig):
+                print(f"Sync: Invalid signature for action {a_data['id']}. Skipping.")
+                continue
+
         new_action = Action(
             id=a_data["id"],
             action_type_id=a_data["type_id"],
             node_id=local_node_id,
             payload=a_data["payload"],
+            signature=a_data.get("signature"), # Phase 2
             created_at=datetime.fromisoformat(a_data["created_at"])
         )
         db.session.add(new_action)
@@ -698,6 +841,17 @@ if __name__ == "__main__":
             sys_node = Node(id=SYSTEM_UUID, device_id="system", name="System")
             db.session.add(sys_node)
             
+            exp_type = ActionType(
+                name="Досвід (Фото)",
+                description="Фіксація результату з фото",
+                schema=json.dumps({
+                    "fields": [
+                        {"name": "summary", "label": "Що зроблено", "type": "text"},
+                        {"name": "photo", "label": "Фото результату", "type": "image"}
+                    ]
+                }),
+                creator_id=sys_node.id
+            )
             help_type = ActionType(
                 name="Допомога",
                 description="Пряма допомога людині",
@@ -709,6 +863,7 @@ if __name__ == "__main__":
                 }),
                 creator_id=sys_node.id
             )
+            db.session.add(exp_type)
             db.session.add(help_type)
             db.session.commit()
             

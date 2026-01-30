@@ -99,7 +99,10 @@
 <body>
     <div class="container">
         <nav style="position: relative;">
-            <a href="/">{{ t('nav_home') }}</a>
+            <a href="/" style="display: inline-block;">
+                {{ t('nav_home') }}
+                <div style="font-size: 0.6rem; color: var(--muted); font-weight: normal;">People for People</div>
+            </a>
             <a href="/read">{{ t('nav_knowledge') }}</a>
             <a href="/types">{{ t('nav_types') }}</a>
             <a href="/stats">{{ t('nav_stats') }}</a>
