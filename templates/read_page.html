@@ -2,16 +2,19 @@
 
 {% block content %}
 
-<div style="margin-bottom: 1rem;">
-    <a href="/read" style="color: var(--muted); text-decoration: none;">{{ t('read_back') }}</a>
+<div style="margin-bottom: 2rem;">
+    <a href="/read"
+        style="color: var(--muted); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.2rem;">←</span> {{ t('read_back') }}
+    </a>
 </div>
 
-<div class="card" style="border: none; padding: 0;">
-    <h1 style="margin-bottom: 0.5rem;">{{ page.title }}</h1>
-    <p class="meta">{{ t('read_updated') }}: {{ page.updated_at.strftime('%Y-%m-%d') }}</p>
-    <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+<div class="card" style="padding: 3rem; line-height: 1.7;">
+    <h1 style="margin-bottom: 0.5rem; font-size: 2.5rem; color: var(--text);">{{ page.title }}</h1>
+    <p class="meta" style="margin-bottom: 2rem;">{{ t('read_updated') }}: <strong>{{
+            page.updated_at.strftime('%Y-%m-%d') }}</strong></p>
 
-    <div style="line-height: 1.6;">
+    <div style="font-size: 1.1rem; color: rgba(255,255,255,0.9);">
         {{ content_html|safe }}
     </div>
 </div>

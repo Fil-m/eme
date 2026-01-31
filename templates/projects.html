@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+    <h2 style="font-size: 2.5rem; margin: 0; font-weight: 900;">{{ t('projects_title') }}</h2>
+    <button class="btn" onclick="document.getElementById('new-project-form').style.display='block'"><span>+</span> {{
+        t('projects_create_btn') }}</button>
+</div>
+
+<div id="new-project-form" class="card"
+    style="display: none; margin-bottom: 3rem; max-width: 800px; border-radius: 32px;">
+    <h3 style="margin-top: 0; margin-bottom: 2rem; color: var(--text);">{{ t('projects_new_title') }}</h3>
+    <form action="/projects/new" method="POST">
+        <input type="text" name="name" placeholder="{{ t('projects_placeholder_name') }}" required
+            style="font-size: 1.1rem; font-weight: 600;">
+        <textarea name="description" placeholder="{{ t('projects_placeholder_desc') }}" rows="4"></textarea>
+
+        <label class="meta"
+            style="display: block; margin-bottom: 0.75rem; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">{{
+            t('projects_parent_label') }}</label>
+        <select name="parent_id" style="margin-bottom: 2.5rem;">
+            <option value="none">{{ t('projects_root_option') }}</option>
+            {% for p in all_projects %}
+            <option value="{{ p.id }}">{{ p.name }}</option>
+            {% endfor %}
+        </select>
+
+        <div style="display: flex; gap: 1.5rem;">
+            <button type="submit" class="btn" style="flex: 2; justify-content: center;">{{ t('who_btn_save') }}</button>
+            <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;"
+                onclick="document.getElementById('new-project-form').style.display='none'">← {{ t('read_back')
+                }}</button>
+        </div>
+    </form>
+</div>
+
+<div style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+    {% if not projects %}
+    <div class="card"
+        style="grid-column: 1 / -1; text-align: center; padding: 4rem; opacity: 0.6; border-style: dashed;">
+        <p style="font-size: 1.25rem;">{{ t('projects_empty') }}</p>
+    </div>
+    {% else %}
+    {% for project in projects %}
+    <a href="/project/{{ project.id }}" class="card"
+        style="text-decoration: none; color: inherit; padding: 2rem; transition: var(--transition);">
+        <div style="display: flex; align-items: flex-start; gap: 1rem;">
+            <span style="font-size: 2rem;">📂</span>
+            <div style="flex: 1;">
+                <strong style="font-size: 1.4rem; font-family: 'Outfit', sans-serif; color: var(--primary);">{{
+                    project.name }}</strong>
+                <div class="meta" style="margin-top: 0.5rem; line-height: 1.4;">{{ project.description or '...' }}</div>
+            </div>
+        </div>
+
+        {% if project.subprojects %}
+        <div
+            style="margin-top: 1.5rem; padding-left: 1rem; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem;">
+            {% for sub in project.subprojects|batch(3)|first %}
+            <div class="meta" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1rem;">📁</span> {{ sub.name }}
+            </div>
+            {% endfor %}
+            {% if project.subprojects|length > 3 %}
+            <div class="meta" style="font-style: italic; font-size: 0.8rem; margin-top: 0.25rem;">+ ще {{
+                project.subprojects|length - 3 }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="meta"
+            style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem; display: flex; justify-content: space-between; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; color: var(--accent-aqua);">
+            <span>{{ t('projects_nested_actions') }}</span> <span>{{ project.actions|length }}</span>
+        </div>
+    </a>
+    {% endfor %}
+    {% endif %}
+</div>
+
+{% endblock %}

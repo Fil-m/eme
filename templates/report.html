@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="/" style="color: var(--muted); text-decoration: none;">← Назад</a>
+</div>
+
+<div class="card" style="text-align: center; padding: 2rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">👤</div>
+    <h2>{{ node.name }}</h2>
+    <p class="meta">ID пристрою: {{ node.device_id }}</p>
+    <p class="meta">Вперше в мережі: {{ node.created_at.strftime('%Y-%m-%d') }}</p>
+</div>
+
+<h3>Міні-резюме (Підтверджений внесок)</h3>
+<div class="card">
+    {% if not stats %}
+    <p style="text-align: center; color: var(--muted);">Поки що немає підтверджених дій.</p>
+    {% else %}
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+                <th style="padding: 0.5rem;">Категорія (Ген)</th>
+                <th style="padding: 0.5rem; text-align: right;">Завершено</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat, count in stats.items() %}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.5rem;">{{ cat }}</td>
+                <td style="padding: 0.5rem; text-align: right; font-weight: bold; color: var(--primary);">{{ count }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<div style="margin-top: 2rem; text-align: center;">
+    <button class="btn" onclick="window.print()">Згенерувати PDF звіт</button>
+</div>
+
+{% endblock %}

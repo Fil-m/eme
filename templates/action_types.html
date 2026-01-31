@@ -3,37 +3,41 @@
 {% block content %}
 
 <h2>{{ t('types_title') }}</h2>
-<p class="meta">{{ t('types_desc') }}</p>
+<p class="meta" style="margin-bottom: 2rem;">{{ t('types_desc') }}</p>
 
 <div
-    style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); margin-bottom: 2rem;">
+    style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-bottom: 3rem;">
     {% for type in types %}
     <a href="/do/{{ type.id }}" class="card"
-        style="text-decoration: none; color: inherit; display: block; border: 1px solid var(--border);">
-        <strong>{{ type.name }}</strong>
-        <div class="meta" style="font-size: 0.8rem; margin-top: 0.5rem;">{{ type.description or '...' }}</div>
+        style="text-decoration: none; color: inherit; display: block; padding: 1.5rem; transition: var(--transition);">
+        <strong style="font-size: 1.25rem; font-family: 'Outfit', sans-serif; color: var(--primary);">{{ type.name
+            }}</strong>
+        <div class="meta" style="margin-top: 0.75rem;">{{ type.description or '...' }}</div>
     </a>
     {% endfor %}
 </div>
 
 <!-- Simple inline create -->
-<div class="card">
-    <h3>{{ t('types_create_title') }}</h3>
+<div class="card" style="max-width: 600px;">
+    <h3 style="margin-bottom: 1.5rem; color: var(--text);">{{ t('types_create_title') }}</h3>
     <form action="/types/new" method="POST">
         <input name="name" placeholder="{{ t('types_placeholder_name') }}" required>
         <input name="description" placeholder="{{ t('types_placeholder_desc') }}">
 
-        <details>
-            <summary class="meta" style="cursor: pointer; margin-bottom: 0.5rem;">{{ t('types_setup_fields') }}
+        <details style="margin-bottom: 1.5rem;">
+            <summary class="meta"
+                style="cursor: pointer; margin-bottom: 0.75rem; font-weight: 600; color: var(--accent-aqua);">
+                {{ t('types_setup_fields') }}
             </summary>
-            <p class="meta">{{ t('types_fields_desc') }}</p>
-            <textarea name="schema" rows="4" style="font-family: monospace;">{"fields": [
+            <p class="meta" style="margin-bottom: 1rem;">{{ t('types_fields_desc') }}</p>
+            <textarea name="schema" rows="4" style="font-family: monospace; font-size: 0.9rem;">{"fields": [
   {"name": "recipient", "label": "{{ t('types_schema_recipient') }}"},
   {"name": "details", "label": "{{ t('types_schema_details') }}"}
 ]}</textarea>
         </details>
 
-        <button class="btn" style="margin-top: 0.5rem;">{{ t('types_btn_create') }}</button>
+        <button class="btn" style="width: 100%; justify-content: center;"><span>+</span> {{ t('types_btn_create')
+            }}</button>
     </form>
 </div>
 

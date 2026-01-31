@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem;">
+    <a href="/projects" class="meta"
+        style="text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; color: var(--muted); transition: var(--transition);">
+        <span style="font-size: 1.2rem;">←</span> {{ t('read_back') }}
+    </a>
+</div>
+
+<div class="card"
+    style="margin-bottom: 3rem; border-top: 6px solid var(--primary); padding: 3rem; border-radius: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem;">
+        <div>
+            <h2 style="font-size: 3rem; font-weight: 900; margin: 0; color: var(--text);">{{ project.name }}</h2>
+            <p class="meta" style="font-size: 1.2rem; margin-top: 1rem; color: var(--muted); line-height: 1.5;">{{
+                project.description }}</p>
+        </div>
+        <div style="text-align: right;">
+            <div class="badge"
+                style="background: rgba(34, 211, 238, 0.1); color: var(--accent-aqua); border: 1px solid rgba(34, 211, 238, 0.2); padding: 0.5rem 1.5rem; font-size: 0.8rem;">
+                {{ project.status | upper }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats & Progress -->
+    <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+        <div class="card"
+            style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 2rem; border-radius: 24px;">
+            <div class="meta" style="font-weight: 700; text-transform: uppercase;">Прогрес проекту</div>
+            {% set total = project.actions | length %}
+            {% set done = project.actions | selectattr('status', 'equalto', 'verified') | list | length %}
+            <div style="font-size: 3rem; font-weight: 900; margin: 1rem 0; color: var(--accent-aqua);">{{ (done / total
+                * 100) | int if total > 0 else 0 }}%</div>
+            <div style="height: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; overflow: hidden;">
+                <div
+                    style="width: {{ (done / total * 100) | int }}%; height: 100%; background: var(--primary-grad); box-shadow: 0 0 15px var(--primary);">
+                </div>
+            </div>
+        </div>
+
+        <div class="card"
+            style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 2rem; border-radius: 24px;">
+            <div class="meta" style="font-weight: 700; text-transform: uppercase;">Статистика дій</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                <div>
+                    <div style="font-size: 0.7rem; font-weight: 800; color: var(--muted); text-transform: uppercase;">
+                        Беклог</div>
+                    <div style="font-size: 1.75rem; font-weight: 900; color: var(--text);">{{ project.actions |
+                        selectattr('status', 'equalto', 'proposed') | list | length }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; font-weight: 800; color: var(--muted); text-transform: uppercase;">В
+                        роботі</div>
+                    <div style="font-size: 1.75rem; font-weight: 900; color: var(--primary);">{{ project.actions |
+                        selectattr('status', 'in', ['in_progress', 'completed']) | list | length }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if project.definition_of_done %}
+<div class="card"
+    style="margin-bottom: 3rem; background: rgba(192, 132, 252, 0.03); border: 1px dashed rgba(192,132,252,0.3); padding: 2rem 3rem;">
+    <h3
+        style="margin: 0 0 1rem 0; font-size: 1.25rem; color: var(--accent-purple); display: flex; align-items: center; gap: 0.75rem;">
+        🛡 Definition of Done
+    </h3>
+    <div style="color: rgba(255,255,255,0.8); line-height: 1.7; font-size: 1.1rem;">{{ project.definition_of_done }}
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabs Navigation -->
+<div style="display: flex; gap: 2.5rem; margin-bottom: 3rem; border-bottom: 1px solid var(--border);">
+    <button class="nav-tab active">📥 Беклог</button>
+    <button class="nav-tab">⚡ У роботі</button>
+    <button class="nav-tab">✅ Архів</button>
+</div>
+
+<!-- Simple Tabs Content -->
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem;">
+    <!-- Proposed -->
+    <div class="tab-column">
+        <h3 class="meta" style="margin-bottom: 1.5rem; font-weight: 800; color: var(--muted);">/ BACKLOG</h3>
+        {% for action in backlog %}
+        <div class="card" style="margin-bottom: 1.25rem; padding: 1.5rem; border-left: 3px solid var(--border);">
+            <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 1.1rem;">{{ action.action_type.name }}</div>
+            <div class="meta" style="font-size: 0.8rem; margin-bottom: 1.5rem; font-weight: 600;">{{
+                action.created_at.strftime('%d %b') }}</div>
+            <a href="/action/{{ action.id }}/take" class="btn btn-secondary"
+                style="width: 100%; justify-content: center; font-size: 1rem;">Взяти</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Active -->
+    <div class="tab-column">
+        <h3 class="meta" style="margin-bottom: 1.5rem; font-weight: 800; color: var(--primary);">/ ACTIVE</h3>
+        {% for action in active %}
+        <div class="card" style="margin-bottom: 1.25rem; padding: 1.5rem; border-left: 4px solid var(--primary);">
+            <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 1.1rem;">{{ action.action_type.name }}</div>
+            <div class="meta" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Хто: <strong
+                    style="color: var(--text);">{{ action.assignee.name if action.assignee else '?' }}</strong></div>
+            {% if action.status == 'in_progress' and action.assignee_node_id == current_node.id %}
+            <a href="/action/{{ action.id }}/complete" class="btn"
+                style="width: 100%; justify-content: center; background: #10b981; color: #000;">Готово</a>
+            {% elif action.status == 'completed' %}
+            <a href="/action/{{ action.id }}/verify" class="btn"
+                style="width: 100%; justify-content: center; background: var(--accent-aqua); color: #000;">Перевірити</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Archive -->
+    <div class="tab-column">
+        <h3 class="meta" style="margin-bottom: 1.5rem; font-weight: 800; color: var(--muted);">/ DONE</h3>
+        {% for action in archive %}
+        <div class="card" style="margin-bottom: 1.25rem; padding: 1.5rem; opacity: 0.6; grayscale(0.5);">
+            <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 1.1rem;">{{ action.action_type.name }}</div>
+            <div class="meta" style="font-size: 0.8rem;">Дію закрито: {{ action.updated_at.strftime('%d %b') }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .nav-tab {
+        background: none;
+        border: none;
+        color: var(--muted);
+        padding: 1rem 0;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 3px solid transparent;
+        transition: var(--transition);
+    }
+
+    .nav-tab:hover {
+        color: var(--text);
+    }
+
+    .nav-tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+</style>
+<style>
+    .nav-tab {
+        background: none;
+        border: none;
+        color: var(--muted);
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-size: 1rem;
+        border-bottom: 2px solid transparent;
+    }
+
+    .nav-tab.active {
+        color: var(--primary);
+        border-bottom: 2px solid var(--primary);
+    }
+</style>
+
+<script>
+    function showTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tab).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+{% endblock %}

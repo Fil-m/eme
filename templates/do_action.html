@@ -2,20 +2,73 @@
 
 {% block content %}
 
-<h2>{{ type.name }}</h2>
-<p class="meta">{{ type.description }}</p>
+<h2 style="font-size: 2rem; margin-bottom: 0.5rem;">{{ type.name }}</h2>
+<p class="meta" style="margin-bottom: 2.5rem;">{{ type.description }}</p>
 
-<form method="POST" class="card">
+<form method="POST" class="card" style="max-width: 800px;">
     {% for field in schema.fields %}
-    <label>{{ field.label or field.name }}</label>
+    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--muted);">{{ field.label or
+        field.name }}</label>
     <input type="{{ field.type or 'text' }}" name="{{ field.name }}" placeholder="..." required>
     {% endfor %}
 
-    <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-        <button type="submit" class="btn">Зафіксувати</button>
-        <a href="/types" class="btn"
-            style="background: transparent; border: 1px solid var(--border); color: var(--text);">Скасувати</a>
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+
+    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--muted);">Виберіть проект
+        (папку)</label>
+    <select name="project_id">
+        <option value="none">-- Без проекту --</option>
+        {% for p in projects %}
+        <option value="{{ p.id }}">{{ p.name }}</option>
+        {% endfor %}
+    </select>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem;">
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--muted);">Свідків
+                потрібно</label>
+            <input type="number" name="required_witnesses" value="1" min="1" max="10">
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding-top: 1rem;">
+            <input type="checkbox" name="keep_evidence" id="keep_evidence" style="width: auto; margin: 0; scale: 1.2;">
+            <label for="keep_evidence" style="margin: 0; font-weight: 600; color: var(--muted);">Зберегти
+                фото-доказ</label>
+        </div>
     </div>
+
+    <div style="margin-top: 1.5rem;">
+        <label style="display: block; margin-bottom: 0.75rem; font-weight: 600; color: var(--muted);">Доказ
+            (фото)</label>
+        <input type="file" id="photo_input" accept="image/*" capture="environment" style="display: none;">
+        <button type="button" class="btn btn-secondary" style="width: 100%; justify-content: center; gap: 0.75rem;"
+            onclick="document.getElementById('photo_input').click()">📷 Зробити фото</button>
+        <input type="hidden" name="evidence_photo" id="evidence_photo_hidden">
+        <div id="photo_preview" style="margin-top: 1.5rem; display: none; text-align: center;">
+            <img id="preview_img"
+                style="max-width: 100%; border-radius: 16px; border: 2px solid var(--primary); box-shadow: 0 10px 30px rgba(255,126,103,0.2);">
+        </div>
+    </div>
+
+    <div style="margin-top: 3rem; display: flex; gap: 1.5rem;">
+        <button type="submit" class="btn" style="flex: 2; justify-content: center;">Зафіксувати</button>
+        <a href="/types" class="btn btn-secondary" style="flex: 1; justify-content: center;">Скасувати</a>
+    </div>
+
+    <script>
+        document.getElementById('photo_input').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const base64String = event.target.result;
+                    document.getElementById('evidence_photo_hidden').value = base64String;
+                    document.getElementById('preview_img').src = base64String;
+                    document.getElementById('photo_preview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </form>
 
 {% endblock %}

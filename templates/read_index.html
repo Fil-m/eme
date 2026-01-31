@@ -2,20 +2,18 @@
 
 {% block content %}
 
-<h2>{{ t('nav_knowledge') }} (Knowledge Base)</h2>
-<p class="meta">{{ t('read_knowledge_desc') }}</p>
+<h2>{{ t('nav_knowledge') }}</h2>
+<p class="meta" style="margin-bottom: 2rem;">{{ t('read_knowledge_desc') }}</p>
 
-<div class="card">
-    <div style="display: grid; gap: 0.5rem;">
-        {% for page in pages %}
-        {% set base_slug = page.slug.replace('-uk', '').replace('-en', '') %}
-        <a href="/read/{{ base_slug }}"
-            style="display: block; padding: 1rem; background: #2a2a2a; color: white; text-decoration: none; border-radius: 4px; border: 1px solid #333;">
-            <strong style="font-size: 1.1rem;">{{ page.title }}</strong>
-            <span style="float: right; color: #777;">➔</span>
-        </a>
-        {% endfor %}
-    </div>
+<div style="display: grid; gap: 1.25rem;">
+    {% for page in pages %}
+    {% set base_slug = page.slug.replace('-uk', '').replace('-en', '') %}
+    <a href="/read/{{ base_slug }}" class="card"
+        style="display: flex; justify-content: space-between; align-items: center; text-decoration: none; padding: 1.5rem; transition: var(--transition);">
+        <strong style="font-size: 1.25rem; font-family: 'Outfit', sans-serif;">{{ page.title }}</strong>
+        <span style="color: var(--primary); font-size: 1.5rem; transition: var(--transition);">➔</span>
+    </a>
+    {% endfor %}
 </div>
 
 {% endblock %}

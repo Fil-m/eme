@@ -2,33 +2,175 @@
 
 {% block content %}
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h2>{{ t('actions_title') }}</h2>
-    <a href="/types" class="btn">{{ t('btn_add_action') }}</a>
-</div>
-
-{% if not actions %}
-<div class="card" style="text-align: center; padding: 2rem;">
-    <p>{{ t('no_actions') }}</p>
-    <a href="/types" class="btn">{{ t('btn_add_action') }}</a>
-</div>
-{% endif %}
-
-<div class="action-list">
-    {% for action in actions %}
-    <div class="card" style="border-left: 4px solid var(--{{ action.color }});">
-        <div class="meta">
-            <strong>{{ action.who }}</strong> • {{ action.type }} • {{ action.when }}
+<div class="index-grid" style="display: grid; grid-template-columns: 1fr 350px; gap: 3rem; align-items: flex-start;">
+    <!-- Main Feed -->
+    <section>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+            <h1 style="margin: 0; font-size: 2.25rem;">{{ t('actions_title') }}</h1>
+            <a href="/types" class="btn">
+                <span>+</span> {{ t('btn_add_action') }}
+            </a>
         </div>
-        <div style="margin-top: 0.5rem;">
-            {% for key, val in action.data.items() %}
-            {% if key not in ['csrf'] %}
-            <div><span style="color: var(--muted);">{{ key }}:</span> {{ val }}</div>
-            {% endif %}
+
+        {% if not actions %}
+        <div class="card" style="text-align: center; padding: 5rem 2rem;">
+            <div style="font-size: 4rem; margin-bottom: 1.5rem;">🪸</div>
+            <p class="meta" style="font-size: 1.1rem;">{{ t('no_actions') }}</p>
+            <a href="/types" class="btn" style="margin-top: 1.5rem;"><span>+</span> {{ t('btn_add_action') }}</a>
+        </div>
+        {% endif %}
+
+        <div class="action-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            {% for action in actions %}
+            <div class="card" style="border-left: 4px solid var(--{{ action.color or 'primary' }}); padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <div class="meta"
+                            style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                            <strong style="color: var(--text); cursor: pointer; font-size: 1rem;"
+                                onclick="location.href='/report/{{ action.creator_id }}'">
+                                {{ action.who }}
+                            </strong>
+                            {% if action.project %}
+                            <span
+                                style="background: rgba(34, 211, 238, 0.1); color: var(--accent-aqua); padding: 2px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">
+                                # {{ action.project }}
+                            </span>
+                            {% endif %}
+                            <span>•</span>
+                            <span style="font-size: 0.8rem;">{{ action.when }}</span>
+                        </div>
+
+                        <div
+                            style="font-size: 1.15rem; font-weight: 500; margin-bottom: 1.25rem; line-height: 1.5; color: #fff;">
+                            {% for key, val in action.data.items() %}
+                            {% if key not in ['csrf', 'evidence_photo', 'keep_evidence', 'required_witnesses',
+                            'project_id', 'note', 'details'] %}
+                            <span style="color: var(--muted); font-size: 0.9rem; text-transform: lowercase;">{{ key
+                                }}:</span> {{ val }}
+                            {% else %}
+                            {{ val }}
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span class="badge"
+                                style="background: rgba(255,255,255,0.03); color: var(--muted); border: 1px solid var(--border);">
+                                {{ action.type }}
+                            </span>
+                            <span class="badge" style="background: 
+                                {% if action.status == 'proposed' %}rgba(148, 163, 184, 0.1)
+                                {% elif action.status == 'in_progress' %}rgba(192, 132, 252, 0.1)
+                                {% elif action.status == 'completed' %}rgba(34, 211, 238, 0.1)
+                                {% elif action.status == 'verified' %}rgba(255, 126, 103, 0.1)
+                                {% endif %}; 
+                                color: 
+                                {% if action.status == 'proposed' %}var(--muted)
+                                {% elif action.status == 'in_progress' %}var(--accent-purple)
+                                {% elif action.status == 'completed' %}var(--accent-aqua)
+                                {% elif action.status == 'verified' %}var(--primary)
+                                {% endif %}; border: 1px solid currentColor;">
+                                {{ action.status }}
+                            </span>
+                            {% if action.assignee %}
+                            <span class="meta"
+                                style="background: rgba(255,255,255,0.03); padding: 0.25rem 0.75rem; border-radius: 8px;">👤
+                                {{ action.assignee }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div style="margin-left: 2rem;">
+                        {% if action.status == 'proposed' and not action.assignee %}
+                        <a href="/action/{{ action.id }}/take" class="btn btn-secondary"
+                            style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">Взяти</a>
+                        {% elif action.status == 'in_progress' and action.assignee == current_node.name %}
+                        <a href="/action/{{ action.id }}/complete" class="btn"
+                            style="padding: 0.6rem 1.2rem; font-size: 0.9rem; background: var(--accent-aqua);">Готово</a>
+                        {% elif action.status == 'completed' %}
+                        <a href="/action/{{ action.id }}/verify" class="btn"
+                            style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">Підтвердити</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
             {% endfor %}
         </div>
-    </div>
-    {% endfor %}
+    </section>
+
+    <!-- Sidebar: Projects & Stats -->
+    <aside class="index-sidebar">
+        {% if projects %}
+        <div class="card"
+            style="margin-bottom: 2rem; background: var(--primary-grad); color: #000; border: none; overflow: hidden; position: relative;">
+            <div style="position: absolute; top: -20px; right: -20px; font-size: 5rem; opacity: 0.1;">🪸</div>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800;">Загальний Прогрес</h3>
+
+            {% set total_a = 0 %}
+            {% set done_a = 0 %}
+            {% for p in projects %}
+            {% set total_a = total_a + p.actions | length %}
+            {% set done_a = done_a + (p.actions | selectattr('status', 'equalto', 'verified') | list | length) %}
+            {% endfor %}
+            {% set avg_p = (done_a / total_a * 100) | int if total_a > 0 else 0 %}
+
+            <div style="margin-top: 1rem; font-size: 2.75rem; font-weight: 900;">{{ avg_p }}%</div>
+            <p style="margin: 0.5rem 0 0; font-size: 0.95rem; font-weight: 600; opacity: 0.9;">
+                {% if avg_p == 100 %}Ви виконали все!{% elif avg_p > 50 %}Ви на вірному шляху!{% else %}Тільки вперед!{%
+                endif %}
+            </p>
+        </div>
+        {% endif %}
+
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0 0.75rem;">
+            <h3
+                style="margin: 0; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">
+                Проекти</h3>
+            <a href="/projects"
+                style="color: var(--primary); text-decoration: none; font-size: 1.75rem; font-weight: 300; transition: var(--transition);">+</a>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            {% for p in projects %}
+            <a href="/project/{{ p.id }}" class="card"
+                style="text-decoration: none; padding: 1.5rem; transition: var(--transition);">
+                <div style="font-weight: 700; color: var(--text); margin-bottom: 0.5rem; font-size: 1.1rem;">{{ p.name
+                    }}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
+                    <span class="meta" style="font-weight: 600;">{{ p.actions | length }} дій</span>
+                    {% set total = p.actions | length %}
+                    {% set done = p.actions | selectattr('status', 'equalto', 'verified') | list | length %}
+                    <span style="font-size: 0.9rem; font-weight: 800; color: var(--primary);">{{ (done / total * 100) |
+                        int if total > 0 else 0 }}%</span>
+                </div>
+                {% if total > 0 %}
+                <div
+                    style="height: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; margin-top: 1rem; overflow: hidden; border: 1px solid var(--border);">
+                    <div
+                        style="width: {{ (done / total * 100) | int }}%; height: 100%; background: var(--primary-grad); border-radius: 4px;">
+                    </div>
+                </div>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </aside>
+</div>
+
+<style>
+    @media (max-width: 1000px) {
+        .index-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .index-sidebar {
+            position: static !important;
+            margin-top: 2rem;
+        }
+    }
+</style>
 </div>
 
 {% endblock %}
