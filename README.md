@@ -1,73 +1,129 @@
 # EME — People for People
-### An Emergent Network of Care — We Arise Together
 
-![EME Concept](https://thumbs.dreamstime.com/b/vibrant-coral-reef-teeming-colorful-marine-life-under-sunlight-rays-creating-lively-underwater-scene-366816580.jpg)
+**EME** (Experimental Mesh Environment) — a decentralized care network. People help people. Technology serves people.
 
-**EME** (Experimental Mesh Environment) is a digital tool to support a human coral reef. It allows people to become "nodes" in a decentralized network of care, documenting small acts of kindness and syncing them offline without central servers.
-
-> **"We don’t start with rules or a manifesto. We start with a wonder that already exists in nature."**
-
-Every node is a server. Every node is a client. We grow horizontally, by ourselves.
-
-## 🌊 The Philosophy
-We are inspired by emergence. Like coral polyps, individually we are small, but together we act as a massive, resilient structure visible from space.
-
-- **Help is normal**, not heroic.
-- **Trust is practiced daily.**
-- **Technology serves people.**
-- **No center. No leaders.**
-
-[Read the full Vision & Manifesto](./MANIFESTO.md)
-
-## ✨ Features
-- **Offline First**: Works entirely over Local LAN / Hotspots. No internet required.
-- **P2P Sync**: "Touch" two devices to sync data (QR Code handshakes).
-- **Knowledge Base**: Distributed markdown documentation system.
-- **Action Logs**: Append-only log of all events (The "Experience Board").
-- **Bilingual**: Fully localized for Ukrainian (UA) and English (EN).
-
-## 📱 Rapid Install (Android / Termux)
-Be the seed for a new network in your city.
-
-1. Install **Termux** from F-Droid.
-2. Run this command (or scan the QR code from another EME node):
-   ```bash
-   pkg update -y && pkg install python -y
-   curl -O http://<EXISTING_NODE_IP>:5000/install.sh
-   bash install.sh
-   ```
-
-## 💻 Manual Install (Windows / Linux)
-1. **Clone & Install**:
-   ```bash
-   git clone https://github.com/Fil-m/eme.git
-   cd eme
-   pip install -r requirements.txt
-   ```
-2. **Run**:
-   ```bash
-   python app.py
-   ```
-   Open `http://localhost:5000` in your browser.
-
-## 🤝 How to Join & Contribute
-**"No approval needed. You’re already a node."**
-
-### For Users
-1. **Become a Node**: Install the app.
-2. **Practice 1/1**: Do 1 act of support daily. Log it in the app.
-3. **Sync**: Meet another node, scan their QR, and share "memory".
-
-### For Developers
-We need your help to keep this "reef" healthy.
-- **Code**: Python (Flask) + HTML/CSS (No complex build steps).
-- **Design**: "Rich Aesthetics" — vibrant, organic, human.
-- **Docs**: Translate content, improve guides.
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for technical details.
-
-## License
-**MIT License**. Free to use, modify, and replicate.
+We build a world where:
+- Help is normal, not heroic
+- Trust is practiced daily  
+- Every action matters
+- The network grows horizontally, without a center
 
 ---
-*“This is just the beginning. Join us. Here. Now. By ourselves.”*
+
+## Quick Start
+
+### 📱 Android (Termux) — Recommended
+
+**Important:** Install Termux only from [F-Droid](https://f-droid.org/), **NOT Google Play** (outdated version).
+
+```bash
+# One-line install from existing node:
+curl -O http://<NODE_IP>:5000/install.sh && bash install.sh
+```
+
+**Or manual install:**
+
+```bash
+# 1. Update and install basics
+pkg update -y && pkg upgrade -y
+pkg install python git -y
+
+# 2. Clone repository
+git clone https://github.com/Fil-m/eme.git
+cd eme
+
+# 3. Install system dependencies (for image processing)
+pkg install libjpeg-turbo zlib libpng freetype clang make libwebp -y
+
+# 4. Install Python packages
+pip install --upgrade pip wheel
+LDFLAGS="-L$PREFIX/lib" CFLAGS="-I$PREFIX/include" pip install -r requirements.txt
+
+# 5. Run
+python app.py
+```
+
+Open on your phone: `http://127.0.0.1:5000`
+
+### 💻 Windows / Linux
+
+```bash
+git clone https://github.com/Fil-m/eme.git
+cd eme
+pip install -r requirements.txt
+python app.py
+```
+
+Open: `http://localhost:5000`
+
+---
+
+##  Creating a Mesh Network
+
+To connect with others and sync data, see the detailed [Mesh Network Guide](./MESH_GUIDE.md).
+
+Quick version:
+1. Enable mobile hotspot on your Android
+2. Others connect to your WiFi
+3. Share your IP (shown in terminal) or QR code
+4. Sync with "📷 Scan QR" or manual IP entry
+
+---
+
+## Philosophy
+
+EME is inspired by nature — like coral polyps creating massive reefs. Individually small, together unstoppable.
+
+- **Horizontality**: No center, no leaders
+- **Transparency**: Open code, open data
+- **Reality**: Works here and now, offline
+- **Reproducibility**: Easy to replicate anywhere
+
+Read the full vision: [MANIFESTO.md](./MANIFESTO.md)
+
+---
+
+## Participation
+
+We seek people who:
+- Do small acts of care daily
+- Believe in horizontal networks  
+- Want to change the world locally and concretely
+
+How to join:
+1. **Run your node**
+2. **Log 1 action daily**
+3. **Sync with friends**
+4. **Become part of the network**
+
+Developers: See [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+---
+
+## Troubleshooting
+
+### Termux: `ModuleNotFoundError: No module named 'PIL'`
+
+This means Pillow wasn't installed correctly. Run:
+
+```bash
+pkg install libjpeg-turbo zlib libpng freetype clang make libwebp -y
+pip install --upgrade pip wheel
+LDFLAGS="-L$PREFIX/lib" CFLAGS="-I$PREFIX/include" pip install Pillow
+pip install qrcode[pil]
+```
+
+Verify:
+```bash
+python -c "from PIL import Image; print('Pillow OK')"
+```
+
+---
+
+## License
+
+**MIT License** — Free to use, modify, and replicate.
+
+---
+
+*"This is just the beginning. Join us. Here. Now. By ourselves."*

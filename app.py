@@ -483,11 +483,17 @@ def install_script():
 echo ">>> EME NODE INSTALLER <<<"
 echo "Target: {host}"
 
-# 1. Prepare environment
-pkg update -y
-pkg install python -y
-# Try to install dependencies. If offline, this might fail, but we continue hoping they are there.
-pip install flask flask-sqlalchemy requests qrcode markdown || echo "Pip install skipped (offline?)"
+# 1. Update and upgrade
+pkg update -y && pkg upgrade -y
+
+# 2. Install Python and Git
+pkg install python git -y
+
+# 3. Install system dependencies for Pillow (CRITICAL for Termux)
+pkg install libjpeg-turbo zlib libpng freetype clang make libwebp -y
+
+# 4 Upgrade pip
+pip install --upgrade pip wheel
 
 # 2. Setup directory
 mkdir -p eme
@@ -502,9 +508,13 @@ echo "Unzipping..."
 unzip -o bundle.zip
 rm bundle.zip
 
-# 5. Start
+# 8. Install Python dependencies with proper flags for Pillow
+echo "Installing Python dependencies..."
+LDFLAGS="-L$PREFIX/lib" CFLAGS="-I$PREFIX/include" pip install flask flask-sqlalchemy requests qrcode[pil] markdown || echo "Warning: Some packages may need internet"
+
+# 9. Verify
 echo "Verifying dependencies..."
-python -c "import flask, flask_sqlalchemy, requests, qrcode, markdown; print('Dependencies OK')" || {{ echo "MISSING MODULES! Connect to internet and run: pip install flask flask-sqlalchemy requests qrcode markdown"; exit 1; }}
+python -c "from PIL import Image; import flask, qrcode, markdown; print('All dependencies OK!')" || {{ echo "ERROR: Connect to internet and run: LDFLAGS=\"-L\$PREFIX/lib\" CFLAGS=\"-I\$PREFIX/include\" pip install -r requirements.txt"; exit 1; }}
 
 echo "Installation Complete."
 echo "Running EME Node..."
