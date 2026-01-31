@@ -2,8 +2,8 @@
 
 {% block content %}
 
-<h2>Типи дій</h2>
-<p class="meta">Обери тип, щоб додати дію, або створи новий.</p>
+<h2>{{ t('types_title') }}</h2>
+<p class="meta">{{ t('types_desc') }}</p>
 
 <div
     style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); margin-bottom: 2rem;">
@@ -18,21 +18,22 @@
 
 <!-- Simple inline create -->
 <div class="card">
-    <h3>Створити новий ген (тип)</h3>
+    <h3>{{ t('types_create_title') }}</h3>
     <form action="/types/new" method="POST">
-        <input name="name" placeholder="Назва (напр. Волонтерство)" required>
-        <input name="description" placeholder="Короткий опис">
+        <input name="name" placeholder="{{ t('types_placeholder_name') }}" required>
+        <input name="description" placeholder="{{ t('types_placeholder_desc') }}">
 
         <details>
-            <summary class="meta" style="cursor: pointer; margin-bottom: 0.5rem;">Налаштувати поля (JSON)</summary>
-            <p class="meta">Залиште пустим для стандарту (Кому, Що).</p>
+            <summary class="meta" style="cursor: pointer; margin-bottom: 0.5rem;">{{ t('types_setup_fields') }}
+            </summary>
+            <p class="meta">{{ t('types_fields_desc') }}</p>
             <textarea name="schema" rows="4" style="font-family: monospace;">{"fields": [
-  {"name": "recipient", "label": "Кому"},
-  {"name": "details", "label": "Деталі"}
+  {"name": "recipient", "label": "{{ t('types_schema_recipient') }}"},
+  {"name": "details", "label": "{{ t('types_schema_details') }}"}
 ]}</textarea>
         </details>
 
-        <button class="btn" style="margin-top: 0.5rem;">Створити Тип</button>
+        <button class="btn" style="margin-top: 0.5rem;">{{ t('types_btn_create') }}</button>
     </form>
 </div>
 

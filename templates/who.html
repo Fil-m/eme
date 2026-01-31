@@ -2,24 +2,24 @@
 
 {% block content %}
 
-<h2>Хто ти?</h2>
-<p class="meta">Це імʼя буде видно біля кожної твоєї дії.</p>
+<h2>{{ t('who_title') }}</h2>
+<p class="meta">{{ t('who_desc') }}</p>
 
 <form method="POST" class="card">
-    <label>Твоє імʼя або псевдо</label>
+    <label>{{ t('who_label_name') }}</label>
     <input type="text" name="name" value="{{ node.name if node.name != 'New Node' else '' }}"
-        placeholder="Наприклад: Тарас">
+        placeholder="{{ t('who_placeholder_name') }}">
 
-    <label class="meta">ID пристрою (автоматичний)</label>
+    <label class="meta">{{ t('who_label_device_id') }}</label>
     <input type="text" value="{{ node.device_id }}" disabled style="color: grey;">
 
-    <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Зберегти</button>
+    <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">{{ t('who_btn_save') }}</button>
 </form>
 
 <div class="card" style="margin-top: 2rem;">
-    <h3>Твій внесок</h3>
-    <p>Дій зафіксовано: {{ node.actions|length }}</p>
-    <p>Типів створено: {{ node.created_types|length }}</p>
+    <h3>{{ t('who_stats_title') }}</h3>
+    <p>{{ t('who_stats_actions') }}: {{ node.actions|length }}</p>
+    <p>{{ t('who_stats_types') }}: {{ node.created_types|length }}</p>
 </div>
 
 {% endblock %}

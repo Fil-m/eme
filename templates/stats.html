@@ -2,14 +2,14 @@
 
 {% block content %}
 
-<h2>Пульс мережі</h2>
+<h2>{{ t('stats_title') }}</h2>
 
 <div class="card">
     <table style="width: 100%; border-collapse: collapse;">
         <thead>
             <tr style="text-align: left; border-bottom: 1px solid var(--border);">
-                <th style="padding: 0.5rem;">Тип</th>
-                <th style="padding: 0.5rem;">Дій</th>
+                <th style="padding: 0.5rem;">{{ t('stats_table_type') }}</th>
+                <th style="padding: 0.5rem;">{{ t('stats_table_count') }}</th>
             </tr>
         </thead>
         <tbody>
