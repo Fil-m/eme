@@ -14,7 +14,11 @@ We build a world where:
 
 ### 📱 Android (Termux) — Recommended
 
-**Important:** Install Termux only from [F-Droid](https://f-droid.org/), **NOT Google Play** (outdated version).
+**Important:** Install Termux only from [F-Droid](https://f-droid.org/), **NOT Google Play**.
+
+✅ **Що саме ставити в F-Droid:**
+- 🔹 **Назва:** Termux
+- 🔹 **Опис:** Terminal emulator with packages (by Fredrik Fornwall)
 
 ```bash
 # One-line install from existing node:
