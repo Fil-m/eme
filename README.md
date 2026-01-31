@@ -11,16 +11,15 @@ We build a world where:
 - The network grows horizontally, without a center
 
 ---
-
 ## Quick Start
 
 ### 📱 Android (Termux) — Recommended
 
 **Important:** Install Termux only from [F-Droid](https://f-droid.org/), **NOT Google Play**.
 
-✅ **Що саме ставити в F-Droid:**
-- 🔹 **Назва:** Termux
-- 🔹 **Опис:** Terminal emulator with packages (by Fredrik Fornwall)
+✅ **What exactly to install in F-Droid:**
+- 🔹 **Name:** Termux
+- 🔹 **Description:** Terminal emulator with packages (by Fredrik Fornwall)
 
 ```bash
 # One-line install from existing node:
@@ -28,10 +27,9 @@ curl -O http://<NODE_IP>:5000/install.sh && bash install.sh
 ```
 
 > [!IMPORTANT]
-> **При встановленні в Termux:** Якщо з'являються запитання на кшталт `What would you like to do about it?` або `(Y/I/N/O/D/Z)`, просто натискайте **Enter** (за замовчуванням). Таких запитань може бути декілька.
+> **When installing in Termux:** If you see questions like `What would you like to do about it?` or `(Y/I/N/O/D/Z)`, just press **Enter** (default). There may be several such questions.
 
 **Or manual install:**
-
 ```bash
 # 1. Update and install basics
 pkg update -y && pkg upgrade -y
