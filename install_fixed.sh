@@ -4,7 +4,8 @@ echo "Target: $1"
 
 # 1. Update package manager
 echo "Updating packages..."
-pkg update -y && pkg upgrade -y
+pkg update -y
+pkg upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
 # 2. Install Python and Git
 echo "Installing Python and Git..."

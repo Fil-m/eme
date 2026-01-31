@@ -25,6 +25,9 @@ We build a world where:
 curl -O http://<NODE_IP>:5000/install.sh && bash install.sh
 ```
 
+> [!IMPORTANT]
+> **При встановленні в Termux:** Якщо з'являються запитання на кшталт `What would you like to do about it?` або `(Y/I/N/O/D/Z)`, просто натискайте **Enter** (за замовчуванням). Таких запитань може бути декілька.
+
 **Or manual install:**
 
 ```bash
