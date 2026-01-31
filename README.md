@@ -1,5 +1,7 @@
 # EME — People for People
+
 https://t.me/EME_chat 4 help
+
 **EME** (Experimental Mesh Environment) — a decentralized care network. People help people. Technology serves people.
 
 We build a world where:
