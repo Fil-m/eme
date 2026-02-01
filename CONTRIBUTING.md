@@ -10,6 +10,21 @@ When writing code for EME, keep these core principles in mind:
 3.  **Low Tech**: The system must run on old laptops and cheap Android phones (via Termux).
 4.  **Aesthetics**: The design should be vibrant, organic, and premium. Not "hacker green terminal", but "living reef".
 
+## Development Process
+
+We use a scientific approach to creating new features and solutions:
+- Each idea is a hypothesis: "if we add X, then Y will improve (e.g., sync is faster or more people can run a node)".
+- We test empirically: on local meshes, with real users, record metrics and feedback (what worked/didn't).
+- We iteratively improve based on data, as in daily 1/1 practice.
+
+For implementation, we use Scrum-like practices (adapted to horizontality):
+- Self-organized sprints (1–2 weeks): backlog in issues or chat, prioritization together.
+- Daily standups: short 1/1 messages in t.me/EME_chat or local groups ("what did/plan/block").
+- Retrospectives: weekly lesson reviews (as in manifesto) + feedback on PR. 
+- Without a Scrum Master, responsibility is distributed, pull requests are reviewed peer-to-peer.
+
+These are not hard rules, but tools to make changes fast, sustainable, and based on real data.
+
 ## How to Contribute
 
 1.  **Fork the repository**.
