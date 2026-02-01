@@ -61,6 +61,7 @@ Everyone equal in their ability to help.
 - **Reality over utopia**: functional here and now
 - **Self-sufficiency + exchange**: everyone becomes more independent
 - **Reproducibility**: easy to repeat in any city, any context
+- **Scientific approach**: We apply a scientific approach to the evolution of the network: each action of help is an experiment, the result is recorded as data (what → whom → effect → what worked), analyzed by the community. This allows us to identify patterns that work best and scale them horizontally. To implement changes (both in code and in local initiatives) we use Scrum-inspired cycles: short iterations, daily synchronizations, retrospectives through lessons — all without a center, based on self-organization.
 
 ![Diverse people holding hands in unity](https://as1.ftcdn.net/jpg/05/41/88/44/1000_F_541884487_XzdFnjsw1jypTICKkLIbv5Q73FExx0i9.jpg)
 
