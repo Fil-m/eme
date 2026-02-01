@@ -136,5 +136,5 @@ This is emergence: when we come together — something bigger arises than us sep
 Become a node.
 Do one small act today.
 Share it — and the network grows.
-
+EME WILL BE DAO
 *This is just the beginning. Join us. Here. Now. By ourselves.*
