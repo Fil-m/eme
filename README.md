@@ -85,7 +85,7 @@ EME is inspired by nature — like coral polyps creating massive reefs. Individu
 - **Transparency**: Open code, open data
 - **Reality**: Works here and now, offline
 - **Reproducibility**: Easy to replicate anywhere
-
+- **Scientific & Iterative**: We create projects using the scientific method (hypotheses → tests → data) and implement through Scrum-like practices (iterations, daily synchronicities, retrospectives) so that everything grows organically and efficiently.
 Read the full vision: [MANIFESTO.md](./MANIFESTO.md)
 
 ---
