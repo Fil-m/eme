@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Django
+db.sqlite3
+media/clones/*.zip
+media/previews/
+eme_media/previews/
+
+# System
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local
+project.zip
+eme_mobile_dist.zip

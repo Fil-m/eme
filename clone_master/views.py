@@ -1,0 +1,145 @@
+import os
+import zipfile
+import io
+import socket
+from django.conf import settings
+from django.http import HttpResponse, FileResponse
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions, status
+
+class IPDiscoveryView(APIView):
+    """Detects the local network IP of the server."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # Use a dummy connect to find outgoing IP
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            ip = "127.0.0.1"
+        return Response({'ip': ip})
+
+class ModuleListView(APIView):
+    """Returns a list of local project modules available for cloning."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        base_dir = settings.BASE_DIR
+        modules = []
+        
+        # We look for folders in BASE_DIR that are in INSTALLED_APPS
+        for app in settings.INSTALLED_APPS:
+            app_name = app.split('.')[-1]
+            app_path = os.path.join(base_dir, app_name)
+            
+            if os.path.isdir(app_path):
+                # Basic metadata
+                modules.append({
+                    'id': app_name,
+                    'name': app_name.replace('_', ' ').title(),
+                    'path': app_path,
+                    'is_system': app.startswith('django.contrib')
+                })
+                
+        return Response(modules)
+
+class CloneCreateView(APIView):
+    """Generates a ZIP archive of selected modules."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        selected_modules = request.data.get('modules', [])
+        include_db = request.data.get('include_db', False)
+        include_media = request.data.get('include_media', False)
+
+        if not selected_modules:
+            return Response({'error': 'No modules selected'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create ZIP in memory
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # 1. CORE FILES (always included)
+            core_files = ['manage.py', 'requirements.txt', 'start.sh', 'bootstrap_eme.sh', 'seed_nav.py']
+            for f in core_files:
+                f_path = os.path.join(settings.BASE_DIR, f)
+                if os.path.exists(f_path):
+                    zip_file.write(f_path, f)
+
+            # 2. SELECTED MODULES
+            for module in selected_modules:
+                module_path = os.path.join(settings.BASE_DIR, module)
+                if os.path.isdir(module_path):
+                    for root, dirs, files in os.walk(module_path):
+                        # Safety: skip trash and recursion
+                        if any(x in root for x in ['__pycache__', 'venv', '.git']): continue
+                        
+                        for file in files:
+                            full_path = os.path.join(root, file)
+                            rel_path = os.path.relpath(full_path, settings.BASE_DIR)
+                            zip_file.write(full_path, rel_path)
+
+            # 3. STATIC & TEMPLATES (always included if present)
+            for folder in ['static', 'templates']:
+                folder_path = os.path.join(settings.BASE_DIR, folder)
+                if os.path.isdir(folder_path):
+                    for root, dirs, files in os.walk(folder_path):
+                        if any(x in root for x in ['__pycache__', '.git']): continue
+                        for file in files:
+                            full_path = os.path.join(root, file)
+                            rel_path = os.path.relpath(full_path, settings.BASE_DIR)
+                            zip_file.write(full_path, rel_path)
+
+            # 4. DATABASE (Optional)
+            if include_db:
+                db_path = os.path.join(settings.BASE_DIR, 'db.sqlite3')
+                if os.path.exists(db_path):
+                    zip_file.write(db_path, 'db.sqlite3')
+
+            # 5. MEDIA (Optional)
+            if include_media:
+                media_path = settings.MEDIA_ROOT
+                if os.path.isdir(media_path):
+                    for root, dirs, files in os.walk(media_path):
+                        # CRITICAL: skip clones folder to prevent infinite zip recursion!
+                        if 'clones' in root: continue
+                        if '__pycache__' in root: continue
+                        
+                        for file in files:
+                             full_path = os.path.join(root, file)
+                             rel_path = os.path.relpath(full_path, settings.BASE_DIR)
+                             zip_file.write(full_path, rel_path)
+
+            # 6. ARCHITECT MANIFEST
+            manifest = f"# EME OS: Clone Manifest\n\n"
+            manifest += f"Generated by: {request.user.username}\n"
+            manifest += f"Modules: {', '.join(selected_modules)}\n"
+            manifest += f"Include DB: {include_db}\n"
+            manifest += f"Include Media: {include_media}\n\n"
+            manifest += "## Architecture Note\n"
+            manifest += "This clone is a partial state of the EME OS. Ensure all dependencies for selected modules are met.\n"
+            
+            zip_file.writestr('CLONE_INFO.md', manifest)
+
+        buffer.seek(0)
+        
+        # Save to media/clones/
+        clones_dir = os.path.join(settings.MEDIA_ROOT, 'clones')
+        os.makedirs(clones_dir, exist_ok=True)
+        
+        filename = f"eme_clone_{request.user.username}_{int(os.path.getmtime(settings.BASE_DIR))}.zip"
+        file_path = os.path.join(clones_dir, filename)
+        
+        with open(file_path, 'wb') as f:
+            f.write(buffer.getvalue())
+            
+        file_url = f"{settings.MEDIA_URL}clones/{filename}"
+        
+        return Response({
+            'url': file_url,
+            'filename': filename,
+            'message': 'Клон успішно створено'
+        })

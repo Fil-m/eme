@@ -1,0 +1,47 @@
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class EMEUser(AbstractUser):
+    bio = models.TextField(blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    birth_date = models.DateField(null=True, blank=True)
+    avatar = models.ImageField(upload_to='profiles/avatars/', null=True, blank=True)
+    points = models.IntegerField(default=0)
+    level = models.IntegerField(default=1)
+
+    # Mesh / Future
+    telegram_id = models.CharField(max_length=100, blank=True, null=True)
+    language_code = models.CharField(max_length=10, default='uk')
+    is_node_admin = models.BooleanField(default=False)
+    last_seen = models.DateTimeField(null=True, blank=True)
+    public_key = models.TextField(blank=True, null=True)  # For mesh E2E
+
+    def __str__(self):
+        return self.username
+
+    def award_points(self, amount: int, reason: str = '') -> None:
+        """Add XP points and recalculate level (every 100pts = 1 level)."""
+        self.points += amount
+        self.level = max(1, self.points // 100)
+        self.save(update_fields=['points', 'level'])
+
+class SocialLink(models.Model):
+    user = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='social_links')
+    network_name = models.CharField(max_length=50)
+    link = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.network_name}"
+
+
+class FollowRelation(models.Model):
+    follower = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='following')
+    following = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='followers')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['follower', 'following']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.follower.username} → {self.following.username}"

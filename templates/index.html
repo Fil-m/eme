@@ -1,0 +1,196 @@
+{% verbatim %}
+<!DOCTYPE html>
+<html lang="uk" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EME OS</title>
+
+    <!-- Tabler CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Vue3 SFC Loader -->
+    <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader@0.8.4/dist/vue3-sfc-loader.js"></script>
+
+    <style>
+        :root {
+            --eme-accent: #00e5ff;
+            --eme-accent2: #6c00ff;
+            --eme-grad: linear-gradient(135deg, #00e5ff, #6c00ff);
+        }
+
+        [v-cloak] {
+            display: none !important;
+        }
+
+        body {
+            font-family: 'Inter', var(--tblr-font-sans-serif);
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .grad-text {
+            background: var(--eme-grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <div id="app" v-cloak>
+        <!-- SCREEN: AUTH/SETUP -->
+        <eme-auth-screen v-if="view === 'auth' || view === 'setup'" v-model:user="user" :auth="auth"
+            @authenticated="loadInitialData" @success="view = 'shell'"></eme-auth-screen>
+
+        <!-- SCREEN: SHELL -->
+        <eme-shell v-if="view === 'shell'" :nav-items="navItems" v-model:active-app="activeApp" @logout="logout">
+            <!-- APP MODULES -->
+            <eme-my-page v-if="activeApp === 'my_page'" :user="user" :visiting-user="visitingUser"
+                @return="visitingUser = null" @close="activeApp = null"></eme-my-page>
+
+            <eme-gallery v-if="activeApp === 'gallery'" :user="user" :visiting-user="visitingUser" :auth="auth"
+                @return="visitingUser = null" @close="activeApp = null"></eme-gallery>
+
+            <eme-network v-if="activeApp === 'network'" :user="user" :auth="auth" @visit-user="visitUser"
+                @close="activeApp = null"></eme-network>
+
+            <eme-settings v-if="activeApp === 'settings'" v-model:user="user" v-model:system-settings="systemSettings"
+                :auth="auth" @refresh-user="loadInitialData" @close="activeApp = null"></eme-settings>
+
+            <eme-projects v-if="activeApp === 'projects'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-projects>
+
+            <eme-clone-master v-if="activeApp === 'clone_master'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-clone-master>
+
+        </eme-shell>
+    </div>
+
+    <script>
+        const { createApp, defineAsyncComponent } = Vue;
+        const { loadModule } = window['vue3-sfc-loader'];
+
+        const loaderOptions = {
+            moduleCache: { vue: Vue },
+            async getFile(url) {
+                const res = await fetch(url);
+                if (!res.ok) throw Object.assign(new Error(res.statusText + ' ' + url), { res });
+                return {
+                    getContentData: (asBinary) => asBinary ? res.arrayBuffer() : res.text(),
+                };
+            },
+            addStyle(textContent) {
+                const style = document.createElement('style');
+                style.textContent = textContent;
+                const ref = document.head.getElementsByTagName('style')[0] || null;
+                document.head.insertBefore(style, ref);
+            },
+        };
+
+        const app = createApp({
+            data() {
+                return {
+                    view: 'auth',
+                    user: {},
+                    navItems: [],
+                    systemSettings: {},
+                    activeApp: null,
+                    visitingUser: null
+                }
+            },
+            methods: {
+                auth() {
+                    const token = localStorage.getItem('access_token');
+                    if (!token || token === 'undefined' || token === 'null') return {};
+                    return { 'Authorization': 'Bearer ' + token };
+                },
+                async loadInitialData() {
+                    try {
+                        const [uRes, navRes, setRes] = await Promise.all([
+                            fetch('/api/profiles/me/', { headers: this.auth() }),
+                            fetch('/api/nav/items/', { headers: this.auth() }),
+                            fetch('/api/settings/me/', { headers: this.auth() })
+                        ]);
+                        this.user = await uRes.json();
+                        const navData = await navRes.json();
+                        this.navItems = navData.results || navData;
+                        this.systemSettings = await setRes.json();
+                    } catch (e) {
+                        console.error('Data load error', e);
+                    }
+                },
+                async logout() {
+                    const refresh = localStorage.getItem('refresh_token');
+                    if (refresh) {
+                        try {
+                            await fetch('/api/profiles/logout/', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', ...this.auth() },
+                                body: JSON.stringify({ refresh })
+                            });
+                        } catch (e) { }
+                    }
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    this.view = 'auth';
+                    this.activeApp = null;
+                },
+                visitUser(u) {
+                    this.visitingUser = u;
+                    this.activeApp = 'my_page';
+                }
+            },
+            async mounted() {
+                const token = localStorage.getItem('access_token');
+                if (token && token !== 'undefined') {
+                    await this.loadInitialData();
+                    if (this.user.id) {
+                        this.view = 'shell';
+                        // Heartbeat
+                        setInterval(() => {
+                            fetch('/api/network/heartbeat/', { method: 'POST', headers: this.auth() }).catch(() => { });
+                        }, 30000);
+                    } else {
+                        localStorage.removeItem('access_token');
+                    }
+                }
+            }
+        });
+
+        // Register components
+        const components = [
+            'EmeAuthScreen', 'EmeShell', 'EmeMyPage',
+            'EmeGallery', 'EmeNetwork', 'EmeSettings', 'EmeProjects', 'EmeCloneMaster',
+            'EmeProjectDetail'
+        ];
+
+        components.forEach(name => {
+            const tagName = name.replace(/[A-Z]/g, m => "-" + m.toLowerCase()).replace(/^-/, "");
+            app.component(tagName, defineAsyncComponent(() => loadModule(`/static/components/${name}.vue`, loaderOptions)));
+        });
+
+        // Global error handler to catch silently failing crashes
+        app.config.errorHandler = (err, instance, info) => {
+            alert("VUE CRASH: " + err.message + "\n(Info: " + info + ")");
+            console.error("Global Vue Error:", err, info);
+        };
+
+        app.mount('#app');
+    </script>
+
+    <!-- Tabler JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script>
+</body>
+
+</html>
+{% endverbatim %}

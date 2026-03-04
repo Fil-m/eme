@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проект</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css">
+    <style>
+        html,
+        body {
+            background: #1a1c2e;
+            color: #e0e0e0;
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: auto;
+            min-height: 100vh;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box;
+        }
+
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit;
+        }
+
+        .pd-header {
+            background: #1e2036;
+            border-bottom: 1px solid rgba(255, 255, 255, .1);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pd-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .action-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .action-col {
+            background: rgba(255, 255, 255, .03);
+            border: 1px dashed rgba(255, 255, 255, .1);
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 100px;
+        }
+
+        .action-col-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .action-card {
+            background: #252844;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid #aaa;
+            font-size: 13px;
+            position: relative;
+        }
+
+        .action-card.critical {
+            border-left-color: #dc3545;
+        }
+
+        .action-card.high {
+            border-left-color: #ffc107;
+        }
+
+        .action-card.medium {
+            border-left-color: #20c997;
+        }
+
+        .action-card.low {
+            border-left-color: #6c757d;
+        }
+
+        .card-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 3px;
+            opacity: 0;
+            transition: .15s;
+        }
+
+        .action-card:hover .card-actions {
+            opacity: 1;
+        }
+
+        .badge-p {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 4px;
+            margin-right: 2px;
+        }
+
+        .tag-critical {
+            background: rgba(220, 53, 69, .15);
+            color: #dc3545;
+        }
+
+        .tag-high {
+            background: rgba(255, 193, 7, .15);
+            color: #ffc107;
+        }
+
+        .tag-medium {
+            background: rgba(32, 201, 151, .15);
+            color: #20c997;
+        }
+
+        .tag-low {
+            background: rgba(108, 117, 125, .15);
+            color: #6c757d;
+        }
+
+        .tag-role {
+            background: rgba(0, 229, 255, .1);
+            color: #00e5ff;
+        }
+
+        .back-link {
+            color: #00e5ff;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .role-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 12px;
+            margin: 4px;
+            vertical-align: top;
+        }
+
+        .role-desc {
+            color: #8b8fa8;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .member-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, .03);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00e5ff, #6c00ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #6c757d;
+            margin: 22px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .card-eme {
+            background: #1e2036;
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        .mini-input {
+            background: #16182a;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 8px;
+            color: #e0e0e0;
+            padding: 6px 10px;
+            font-size: 12px;
+            flex: 1;
+            outline: none;
+        }
+
+        .mini-input:focus {
+            border-color: #00e5ff44;
+        }
+
+        .mini-select {
+            background: #16182a;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 8px;
+            color: #e0e0e0;
+            padding: 6px 8px;
+            font-size: 12px;
+        }
+
+        .mini-btn {
+            background: #00e5ff22;
+            border: 1px solid #00e5ff44;
+            color: #00e5ff;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .mini-btn:hover {
+            background: #00e5ff33;
+        }
+
+        .mini-btn-ghost {
+            background: none;
+            color: #6c757d;
+            border: 1px solid #6c757d44;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .del-btn {
+            background: none;
+            border: none;
+            color: #dc354588;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 3px;
+        }
+
+        .del-btn:hover {
+            color: #dc3545;
+        }
+
+        .edit-btn {
+            background: none;
+            border: none;
+            color: #00e5ff66;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 3px;
+        }
+
+        .edit-btn:hover {
+            color: #00e5ff;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .action-board {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="pd-header">
+        <a href="/" class="back-link">← Назад до EME OS</a>
+        <div id="header-title" style="font-weight:800;font-size:1rem;"></div>
+        <div style="font-size:12px;color:#6c757d;" id="header-status"></div>
+    </div>
+
+    <div class="pd-container">
+        <div id="loading" style="text-align:center;padding:60px;color:#6c757d;">Завантаження...</div>
+        <div id="error-msg" style="display:none;color:#f66;padding:20px;"></div>
+
+        <div id="content" style="display:none">
+
+            <!-- Project info -->
+            <div class="card-eme">
+                <h1 id="proj-title" style="font-size:1.5rem;font-weight:800;margin:0 0 8px;"></h1>
+                <div id="proj-desc" style="color:#8b8fa8;font-size:13px;margin-bottom:12px;"></div>
+                <div id="proj-badges" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+
+                <div style="margin-top:18px; padding-top:16px; border-top:1px dashed rgba(255,255,255,.1);">
+                    <button class="mini-btn-ghost" style="color:#00e5ff; border-color:rgba(0,229,255,.3);"
+                        onclick="document.getElementById('ai-form').style.display = document.getElementById('ai-form').style.display === 'none' ? 'block' : 'none'">🪄
+                        Згенерувати AI План</button>
+                    <div id="ai-form"
+                        style="display:none; margin-top:12px; background:rgba(0,229,255,.05); border:1px solid rgba(0,229,255,.1); padding:12px; border-radius:8px;">
+                        <div style="font-size:12px; color:#00e5ff; margin-bottom:10px;">💡 AI згенерує нові ролі та
+                            задачі на основі опису проекту і додасть їх до списку нижче. Ви зможете їх змінити.</div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <label style="font-size:12px; color:#8b8fa8; margin:0;">👥 К-сть людей:</label>
+                            <input type="number" id="ai-team-size" class="mini-input" style="max-width:80px;" value="3"
+                                min="1" max="100">
+                            <button class="mini-btn" id="ai-generate-btn"
+                                onclick="generateAiPlan()">Згенерувати</button>
+                        </div>
+                        <div id="ai-status-msg" style="font-size:12px; margin-top:10px; display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── ACTIONS ── -->
+            <div class="section-title">📋 Дії
+                <button class="mini-btn" onclick="showActionForm()">+ Нова дія</button>
+            </div>
+
+            <div id="action-form" style="display:none;" class="card-eme">
+                <div style="font-size:13px;font-weight:600;margin-bottom:10px;" id="action-form-title">Дія</div>
+                <input type="hidden" id="edit-action-id">
+                <textarea id="action-text" class="mini-input" rows="2" placeholder="Що зробити?"
+                    style="width:100%;resize:vertical;box-sizing:border-box;"></textarea>
+                <div class="form-row">
+                    <select id="action-priority" class="mini-select">
+                        <option value="critical">🔴 Критичний</option>
+                        <option value="high">🟡 Високий</option>
+                        <option value="medium" selected>🟢 Середній</option>
+                        <option value="low">⚪ Низький</option>
+                    </select>
+                    <select id="action-status" class="mini-select">
+                        <option value="todo">📋 Задача</option>
+                        <option value="doing">🔧 В роботі</option>
+                        <option value="done">✅ Готово</option>
+                    </select>
+                    <input type="date" id="action-deadline" class="mini-input" style="max-width:160px;" title="Дедлайн">
+                    <select id="action-assignee-role" class="mini-select" title="Прив'язати до ролі">
+                        <option value="">— Роль не обрана —</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <button class="mini-btn" onclick="saveAction()">Зберегти</button>
+                    <button class="mini-btn-ghost" onclick="hideActionForm()">Скасувати</button>
+                </div>
+            </div>
+
+            <div class="action-board">
+                <div class="action-col">
+                    <div class="action-col-title">📋 Задачі</div>
+                    <div id="col-todo"></div>
+                </div>
+                <div class="action-col">
+                    <div class="action-col-title">🔧 Виконується</div>
+                    <div id="col-doing"></div>
+                </div>
+                <div class="action-col">
+                    <div class="action-col-title">✅ Готово</div>
+                    <div id="col-done"></div>
+                </div>
+            </div>
+
+            <!-- ── ROLES ── -->
+            <div class="section-title">🏷️ Ролі
+                <button class="mini-btn" onclick="showRoleForm()">+ Роль</button>
+            </div>
+
+            <div id="role-form" style="display:none;" class="card-eme">
+                <div style="font-size:13px;font-weight:600;margin-bottom:10px;" id="role-form-title">Роль</div>
+                <input type="hidden" id="edit-role-id">
+                <div class="form-row">
+                    <input id="role-emoji" class="mini-input" style="max-width:60px;" value="👤" maxlength="4">
+                    <input id="role-name" class="mini-input" placeholder="Назва ролі">
+                </div>
+                <textarea id="role-desc" class="mini-input" rows="2" placeholder="Опис обов'язків..."
+                    style="width:100%;resize:vertical;box-sizing:border-box;margin-top:8px;"></textarea>
+                <div class="form-row">
+                    <button class="mini-btn" onclick="saveRole()">Зберегти</button>
+                    <button class="mini-btn-ghost" onclick="hideRoleForm()">Скасувати</button>
+                </div>
+            </div>
+
+            <div id="roles-section" style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:4px;"></div>
+
+            <!-- ── MEMBERS ── -->
+            <div class="section-title">👥 Учасники</div>
+            <div id="members-section"></div>
+
+        </div>
+    </div>
+
+    <script>
+        const PID = {{ project_id }};
+        const PLABELS = { critical: '🔴 Крит', high: '🟡 Висок', medium: '🟢 Серед', low: '⚪ Низьк' };
+        const SLABELS = { this_week: '🔥 Цього тижня', in_progress: '🔧 В роботі', backlog: '📦 Backlog', frozen: '❄️ Заморожено', done: '✅ Готово' };
+        const PCOLORS = { critical: '#dc3545', high: '#ffc107', medium: '#20c997', low: '#6c757d' };
+
+        let actions = [], roles = [], members = [];
+        let currentProject = {};
+
+        function token() { return localStorage.getItem('access_token'); }
+        function h() { return { 'Authorization': 'Bearer ' + token(), 'Content-Type': 'application/json' }; }
+
+        // ── Load ──────────────────────────────────────────────────────
+        async function loadAll() {
+            if (!token()) { window.location.href = '/'; return; }
+            try {
+                const [projRes, actRes, rolRes, memRes] = await Promise.all([
+                    fetch(`/api/projects/${PID}/`, { headers: h() }),
+                    fetch(`/api/projects/${PID}/actions/`, { headers: h() }),
+                    fetch(`/api/projects/${PID}/roles/`, { headers: h() }),
+                    fetch(`/api/projects/${PID}/members/`, { headers: h() }),
+                ]);
+                if (!projRes.ok) { showErr('Проект не знайдено або нема доступу.'); return; }
+
+                const [proj, actData, rolData, memData] = await Promise.all([
+                    projRes.json(), actRes.json(), rolRes.json(), memRes.json()
+                ]);
+
+                actions = Array.isArray(actData) ? actData : (actData.results || []);
+                roles = Array.isArray(rolData) ? rolData : (rolData.results || []);
+                members = Array.isArray(memData) ? memData : (memData.results || []);
+                currentProject = proj;
+
+                renderProject(proj);
+                renderActions();
+                renderRoles();
+                renderMembers();
+                populateRoleDropdown();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = '';
+            } catch (e) { showErr('Помилка: ' + e.message); }
+        }
+
+        // ── Render ────────────────────────────────────────────────────
+        function renderProject(p) {
+            document.title = `${p.emoji || '📋'} ${p.title}`;
+            document.getElementById('header-title').textContent = `${p.emoji || ''} ${p.title}`;
+            document.getElementById('header-status').textContent = SLABELS[p.status] || p.status;
+            document.getElementById('proj-title').textContent = `${p.emoji || ''} ${p.title}`;
+            document.getElementById('proj-desc').textContent = p.description || '';
+            const c = PCOLORS[p.priority] || '#6c757d';
+            document.getElementById('proj-badges').innerHTML = `
+        <span style="background:${c}22;color:${c};padding:3px 10px;border-radius:20px;font-size:12px;">${PLABELS[p.priority] || p.priority}</span>
+        <span style="background:rgba(255,255,255,.07);padding:3px 10px;border-radius:20px;font-size:12px;">${SLABELS[p.status] || p.status}</span>
+        ${p.deadline ? `<span style="background:rgba(220,53,69,.05);color:#dc3545;padding:3px 10px;border-radius:20px;font-size:12px;">📅 ${fmt(p.deadline)}</span>` : ''}
+    `;
+        }
+
+        function renderActions() {
+            ['todo', 'doing', 'done'].forEach(s => document.getElementById('col-' + s).innerHTML = '');
+            const ord = { critical: 0, high: 1, medium: 2, low: 3 };
+            [...actions].sort((a, b) => (ord[a.priority] ?? 9) - (ord[b.priority] ?? 9)).forEach(a => {
+                const key = a.status === 'done' ? 'done' : a.status === 'todo' ? 'todo' : 'doing';
+                const col = document.getElementById('col-' + key);
+                if (!col) return;
+                const roleTag = a.assignee_role_name
+                    ? `<span class="badge-p tag-role">🏷️ ${escHtml(a.assignee_role_name)}</span>` : '';
+                const deadlineTag = a.deadline
+                    ? `<span class="badge-p" style="background:rgba(220,53,69,.07);color:#dc3545;">📅 ${fmt(a.deadline)}</span>` : '';
+                const el = document.createElement('div');
+                el.className = 'action-card ' + (a.priority || 'medium');
+                el.innerHTML = `
+            <div style="padding-right:44px;">
+                <div style="font-weight:600;line-height:1.3;word-break:break-word;">${escHtml(a.text || '')}</div>
+                <span class="badge-p tag-${a.priority}">${PLABELS[a.priority] || a.priority}</span>
+                ${deadlineTag}${roleTag}
+            </div>
+            <div class="card-actions">
+                <button class="edit-btn" onclick="showActionForm(${a.id})">✏️</button>
+                <button class="del-btn"  onclick="deleteAction(${a.id})">🗑️</button>
+            </div>`;
+                col.appendChild(el);
+            });
+            ['todo', 'doing', 'done'].forEach(s => {
+                const c = document.getElementById('col-' + s);
+                if (!c.children.length) c.innerHTML = '<div style="color:#6c757d;font-size:11px;text-align:center;padding:16px 0;opacity:.5;">Порожньо</div>';
+            });
+        }
+
+        function renderRoles() {
+            const el = document.getElementById('roles-section');
+            el.innerHTML = roles.length
+                ? roles.map(r => `
+            <div class="role-chip">
+                <div>
+                    <div style="font-weight:700;">${r.emoji || ''} ${r.name}</div>
+                    ${r.description ? `<div class="role-desc">${escHtml(r.description)}</div>` : ''}
+                    <div style="font-size:10px;color:#6c757d;margin-top:2px;">${r.members_count || 0} учасн.</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button class="edit-btn" onclick="showRoleForm(${r.id})">✏️</button>
+                    <button class="del-btn"  onclick="deleteRole(${r.id})">✕</button>
+                </div>
+            </div>`).join('')
+                : '<span style="color:#6c757d;font-size:12px;">Ролі не задані</span>';
+            populateRoleDropdown();
+        }
+
+        function renderMembers() {
+            const el = document.getElementById('members-section');
+            el.innerHTML = members.length
+                ? members.map(m => `
+            <div class="member-row">
+                <div class="avatar">${(m.display_name || m.username || '?')[0].toUpperCase()}</div>
+                <div style="flex:1;">
+                    <div style="font-weight:600;font-size:13px;">@${m.username}</div>
+                    <div style="font-size:11px;color:#6c757d;">${m.role_emoji || ''} ${m.role_name || 'Учасник'}</div>
+                </div>
+            </div>`).join('')
+                : '<div style="color:#6c757d;font-size:12px;">Учасників ще немає</div>';
+        }
+
+        function populateRoleDropdown() {
+            const sel = document.getElementById('action-assignee-role');
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">— Роль не обрана —</option>' +
+                roles.map(r => `<option value="${r.id}">${r.emoji || ''} ${r.name}</option>`).join('');
+            sel.value = cur;
+        }
+
+        // ── Actions CRUD ──────────────────────────────────────────────
+        function showActionForm(id = null) {
+            document.getElementById('edit-action-id').value = id || '';
+            document.getElementById('action-form-title').textContent = id ? '✏️ Редагувати дію' : '➕ Нова дія';
+            if (id) {
+                const a = actions.find(x => x.id === id) || {};
+                document.getElementById('action-text').value = a.text || '';
+                document.getElementById('action-priority').value = a.priority || 'medium';
+                document.getElementById('action-deadline').value = a.deadline || '';
+                document.getElementById('action-status').value = a.status === 'done' ? 'done' : a.status === 'todo' ? 'todo' : 'doing';
+                document.getElementById('action-assignee-role').value = a.assignee_role || '';
+            } else {
+                document.getElementById('action-text').value = '';
+                document.getElementById('action-priority').value = 'medium';
+                document.getElementById('action-deadline').value = '';
+                document.getElementById('action-status').value = 'todo';
+                document.getElementById('action-assignee-role').value = '';
+            }
+            document.getElementById('action-form').style.display = '';
+            document.getElementById('action-text').focus();
+        }
+        function hideActionForm() { document.getElementById('action-form').style.display = 'none'; }
+
+        async function saveAction() {
+            const id = document.getElementById('edit-action-id').value;
+            const text = document.getElementById('action-text').value.trim();
+            if (!text) return;
+            const roleVal = document.getElementById('action-assignee-role').value;
+            const body = {
+                text,
+                priority: document.getElementById('action-priority').value,
+                status: document.getElementById('action-status').value,
+                deadline: document.getElementById('action-deadline').value || null,
+                assignee_role: roleVal ? parseInt(roleVal) : null,
+            };
+            const url = id ? `/api/projects/actions/${id}/` : `/api/projects/${PID}/actions/`;
+            const method = id ? 'PATCH' : 'POST';
+            const res = await fetch(url, { method, headers: h(), body: JSON.stringify(body) });
+            const saved = await res.json();
+            if (res.ok) {
+                if (id) { const i = actions.findIndex(a => a.id == id); if (i !== -1) actions[i] = saved; }
+                else actions.push(saved);
+                renderActions();
+                hideActionForm();
+            } else alert(JSON.stringify(saved));
+        }
+
+        async function deleteAction(id) {
+            if (!confirm('Видалити дію?')) return;
+            await fetch(`/api/projects/actions/${id}/`, { method: 'DELETE', headers: h() });
+            actions = actions.filter(a => a.id !== id);
+            renderActions();
+        }
+
+        // ── Roles CRUD ────────────────────────────────────────────────
+        function showRoleForm(id = null) {
+            document.getElementById('edit-role-id').value = id || '';
+            document.getElementById('role-form-title').textContent = id ? '✏️ Редагувати роль' : '➕ Нова роль';
+            if (id) {
+                const r = roles.find(x => x.id === id) || {};
+                document.getElementById('role-name').value = r.name || '';
+                document.getElementById('role-emoji').value = r.emoji || '👤';
+                document.getElementById('role-desc').value = r.description || '';
+            } else {
+                document.getElementById('role-name').value = '';
+                document.getElementById('role-emoji').value = '👤';
+                document.getElementById('role-desc').value = '';
+            }
+            document.getElementById('role-form').style.display = '';
+            document.getElementById('role-name').focus();
+        }
+        function hideRoleForm() { document.getElementById('role-form').style.display = 'none'; }
+
+        async function saveRole() {
+            const id = document.getElementById('edit-role-id').value;
+            const name = document.getElementById('role-name').value.trim();
+            const emoji = document.getElementById('role-emoji').value.trim() || '👤';
+            const desc = document.getElementById('role-desc').value.trim();
+            if (!name) return;
+            const url = id ? `/api/projects/roles/${id}/` : `/api/projects/${PID}/roles/`;
+            const method = id ? 'PATCH' : 'POST';
+            const res = await fetch(url, { method, headers: h(), body: JSON.stringify({ name, emoji, description: desc }) });
+            const saved = await res.json();
+            if (res.ok) {
+                if (id) { const i = roles.findIndex(r => r.id == id); if (i !== -1) roles[i] = saved; }
+                else roles.push(saved);
+                renderRoles();
+                hideRoleForm();
+            } else alert(JSON.stringify(saved));
+        }
+
+        async function deleteRole(id) {
+            if (!confirm('Видалити роль?')) return;
+            await fetch(`/api/projects/roles/${id}/`, { method: 'DELETE', headers: h() });
+            roles = roles.filter(r => r.id !== id);
+            renderRoles();
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────
+        function fmt(d) { return d ? new Date(d + 'T00:00:00').toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' }) : ''; }
+        function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function showErr(msg) { document.getElementById('loading').style.display = 'none'; const e = document.getElementById('error-msg'); e.textContent = msg; e.style.display = ''; }
+
+        // ── AI ────────────────────────────────────────────────────────
+        async function generateAiPlan() {
+            const btn = document.getElementById('ai-generate-btn');
+            const msg = document.getElementById('ai-status-msg');
+            const teamSize = parseInt(document.getElementById('ai-team-size').value) || 3;
+
+            btn.disabled = true;
+            btn.textContent = 'Генерація...';
+            msg.style.display = 'block';
+            msg.style.color = '#e0e0e0';
+            msg.textContent = 'Звертаємось до AI ⏳ Це може зайняти хвилину...';
+
+            try {
+                const res = await fetch('/api/ai/scaffold/apply/', {
+                    method: 'POST',
+                    headers: h(),
+                    body: JSON.stringify({
+                        module: 'projects',
+                        provider: 'ollama',
+                        model: 'llama3.2:3b',
+                        context: {
+                            project_id: PID,
+                            title: currentProject.title,
+                            description: currentProject.description || '',
+                            domain: currentProject.domain || '',
+                            team_size: teamSize,
+                        }
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    msg.style.color = '#20c997';
+                    msg.textContent = `✅ Згенеровано ${data.applied.roles.length} ролей та ${data.applied.actions_count} дій! Оновлюємо сторінку...`;
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    msg.style.color = '#dc3545';
+                    msg.textContent = `❌ Помилка: ${data.error || JSON.stringify(data)}`;
+                    btn.disabled = false;
+                    btn.textContent = 'Згенерувати';
+                }
+            } catch (e) {
+                msg.style.color = '#dc3545';
+                msg.textContent = `❌ Помилка мережі: ${e.message}`;
+                btn.disabled = false;
+                btn.textContent = 'Згенерувати';
+            }
+        }
+
+        loadAll();
+    </script>
+</body>
+
+</html>
