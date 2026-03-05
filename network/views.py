@@ -43,8 +43,11 @@ class MeshDiscoveryView(APIView):
 
     def get(self, request):
         from profiles.models import EMEUser
+        from .discovery import discovery_service
+        
         users = EMEUser.objects.all().order_by('-last_seen')[:50]
         nodes = Node.objects.filter(is_active=True)
+        external_nodes = discovery_service.get_active_nodes()
 
         user_data = []
         for u in users:
@@ -63,7 +66,8 @@ class MeshDiscoveryView(APIView):
         return Response({
             'users': user_data,
             'nodes': node_data,
-            'total_nodes': nodes.count(),
+            'external_nodes': external_nodes,
+            'total_nodes': nodes.count() + len(external_nodes),
         })
 
 

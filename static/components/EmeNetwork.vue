@@ -19,10 +19,32 @@
 
         <!-- TAB: Users -->
         <div v-if="networkTab==='users'">
-            <div class="mb-3">
+            <div class="mb-3 d-flex justify-content-between align-items-center">
                 <input type="text" class="form-control" style="max-width:300px;" v-model="networkSearch"
                     placeholder="🔍 Пошук учасників...">
+                <button class="btn btn-sm btn-ghost-info" @click="fetchNetworkUsers" :disabled="loading">
+                    <i class="ti ti-refresh" :class="{'ti-spin': loading}"></i> Оновити
+                </button>
             </div>
+
+            <!-- External Discovery Section -->
+            <div v-if="externalNodes.length" class="mb-4">
+                <div class="subheader mb-2 text-info">📡 Знайдено в локальній мережі (Mesh)</div>
+                <div class="row g-2">
+                    <div v-for="node in externalNodes" :key="node.ip" class="col-md-4">
+                        <div class="card bg-info-lt border-info-subtle shadow-none" style="cursor: pointer;" @click="visitExternalNode(node)">
+                            <div class="card-body p-2 d-flex align-items-center gap-2">
+                                <div class="avatar avatar-xs bg-info text-white">📡</div>
+                                <div class="text-truncate">
+                                    <div class="fw-bold small">{{ node.name }}</div>
+                                    <div class="text-muted" style="font-size: 10px;">{{ node.ip }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div v-if="filteredNetworkUsers.length" class="row g-3">
                 <div class="col-md-6 col-lg-4" v-for="u in filteredNetworkUsers" :key="u.id">
                     <div class="card card-hover shadow-sm border-0">
@@ -135,11 +157,13 @@ export default {
             networkTab: 'users',
             networkSearch: '',
             networkUsers: [],
+            externalNodes: [],
             chatRooms: [],
             activeChatRoom: null,
             messages: [],
             newMessage: '',
-            chatPolling: null
+            chatPolling: null,
+            loading: false
         }
     },
     computed: {
@@ -160,11 +184,19 @@ export default {
     },
     methods: {
         async fetchNetworkUsers() {
+            this.loading = true;
             try {
-                const res = await fetch('/api/profiles/users/', { headers: this.auth() });
+                const res = await fetch('/api/network/discovery/', { headers: this.auth() });
                 const data = await res.json();
-                this.networkUsers = data.results || data;
+                this.networkUsers = data.users || [];
+                this.externalNodes = data.external_nodes || [];
             } catch (e) { }
+            finally { this.loading = false; }
+        },
+        visitExternalNode(node) {
+            if (confirm(`Перейти на вузол ${node.name} (${node.ip})?`)) {
+                window.location.href = `http://${node.ip}:8000`;
+            }
         },
         async loadChatRooms() {
             try {
