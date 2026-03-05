@@ -23,7 +23,7 @@
         </div>
 
         <!-- COLUMN 3: MAIN CONTENT AREA -->
-        <div class="eme-main-col">
+        <div class="eme-main-col" :class="{'p-0': activeApp === 'kb' || activeApp === 'projects' || activeApp === 'chat' || activeApp === 'clone_master'}">
             <!-- Empty desktop -->
             <div v-if="!activeApp" class="eme-empty">
                 <div class="big-logo">EME</div>

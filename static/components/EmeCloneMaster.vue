@@ -1,125 +1,161 @@
 <template>
-    <div class="eme-app-page">
-        <div class="eme-app-header">
-            <div class="d-flex align-items-center gap-2">
-                <h1 class="eme-app-title">Клон Мастер</h1>
-                <span class="badge bg-purple-lt">v1.0</span>
+    <div class="clone-shell">
+
+        <div class="clone-header">
+            <div class="d-flex align-items-center gap-3">
+                <span class="clone-title">📦 Клон Мастер</span>
+                <span class="badge bg-cyan-lt">v2.0</span>
             </div>
-            <button class="btn btn-sm btn-ghost-secondary" @click="$emit('close')">✕</button>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="text-muted small" v-if="serverIp">🌐 {{ serverIp }}</span>
+                <button class="btn btn-sm btn-ghost-secondary" @click="$emit('close')">✕</button>
+            </div>
         </div>
 
-        <div class="row g-3">
-            <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h3 class="card-title">Вибір модулів для клонування</h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted small mb-3">
-                            Оберіть частини системи, які ви хочете включити в архів. Базові файли (manage.py, start.sh) додаються автоматично.
-                        </p>
-                        
-                        <div class="list-group list-group-flush mb-4 border rounded">
-                            <div v-for="mod in modules" :key="mod.id" class="list-group-item d-flex align-items-center">
-                                <label class="form-check form-check-inline mb-0 flex-fill py-1" style="cursor:pointer">
-                                    <input class="form-check-input" type="checkbox" v-model="selectedModules" :value="mod.id">
-                                    <span class="form-check-label">
-                                        <strong>{{ mod.name }}</strong>
-                                        <small class="d-block text-muted">/{{ mod.id }}</small>
-                                    </span>
-                                </label>
-                                <span v-if="mod.is_system" class="badge bg-azure-lt ml-auto">Системний</span>
-                            </div>
-                        </div>
+        <div class="d-flex flex-grow-1 overflow-hidden">
 
-                        <div class="space-y">
-                            <label class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" v-model="includeDb">
-                                <span class="form-check-label">Включити Базу Даних (db.sqlite3)</span>
-                            </label>
-                            <label class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" v-model="includeMedia">
-                                <span class="form-check-label">Включити Медіа-файли (media/)</span>
-                            </label>
+            <!-- LEFT: Module Selector -->
+            <div class="clone-sidebar overflow-auto">
+                <div class="px-4 pt-3 pb-2">
+                    <div class="small fw-bold text-muted mb-2" style="letter-spacing:1px;">МОДУЛІ</div>
+                </div>
+
+                <div v-for="mod in modules" :key="mod.id"
+                    class="mod-item"
+                    :class="{ active: isSelected(mod.id), 'mod-system': mod.is_system }"
+                    @click="toggleModule(mod.id)">
+                    <div class="mod-check">
+                        <div class="check-box" :class="{ checked: isSelected(mod.id) }">
+                            <span v-if="isSelected(mod.id)">✓</span>
                         </div>
                     </div>
-                    <div class="card-footer d-flex justify-content-between align-items-center">
-                        <div class="text-muted small">
-                            Обрано модулів: <strong>{{ selectedModules.length }}</strong>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span>{{ mod.icon }} {{ mod.name }}</span>
+                            <span v-if="mod.is_system" class="badge bg-blue-lt" style="font-size:9px;">Core</span>
                         </div>
-                        <button class="btn btn-primary" :disabled="loading || !selectedModules.length" @click="createClone">
-                            <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-                            {{ loading ? 'Створення...' : 'Згенерувати Клон' }}
-                        </button>
+                        <div class="mod-desc">{{ mod.desc }}</div>
+                        <div class="mod-deps" v-if="mod.deps.length">Deps: {{ mod.deps.join(', ') }}</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card bg-dark-lt">
-                    <div class="card-body">
-                        <h3 class="card-title mb-2">📜 Кіт Архітектор</h3>
-                        <p class="small text-muted">
-                            Цей модуль автоматично створює маніфест <code>CLONE_INFO.md</code>, який містить опис структури вашого клону. Це допоможе іншим агентам (або вам) швидше розгорнути систему.
-                        </p>
-                        <div class="hr-text hr-text-left mt-4">Поради</div>
-                        <ul class="small text-muted ps-3">
-                            <li>Мінімальний розмір: лише <code>eme</code>.</li>
-                            <li>Повний бекап: оберіть все + БД + Медіа.</li>
-                            <li>Для Termux: достатньо обрати основні модулі.</li>
-                        </ul>
+            <!-- RIGHT: Options + Result -->
+            <div class="flex-grow-1 overflow-auto p-4">
+
+                <!-- Clone Name -->
+                <div class="option-card mb-3">
+                    <div class="option-card-title mb-3">🏷️ Назва клону</div>
+                    <input class="form-control" v-model="cloneName" placeholder="my_eme_clone">
+                </div>
+
+                <!-- Options -->
+                <div class="option-card mb-3">
+                    <div class="option-card-title mb-3">⚙️ Параметри</div>
+
+                    <div class="option-row">
+                        <div>
+                            <div class="fw-bold">🗄️ База даних</div>
+                            <div class="small text-muted">Включити db.sqlite3 з усіма даними</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" v-model="includeDb">
+                        </div>
+                    </div>
+
+                    <div class="option-row">
+                        <div>
+                            <div class="fw-bold">🖼️ Медіа-файли</div>
+                            <div class="small text-muted">Включити папку media/ (фото, документи)</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" v-model="includeMedia">
+                        </div>
+                    </div>
+
+                    <div class="option-row">
+                        <div>
+                            <div class="fw-bold">🌱 Seed-скрипти</div>
+                            <div class="small text-muted">Авто-наповнення даних після міграцій</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" v-model="includeSeeds">
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Result Modal (QR & Link) -->
-        <div v-if="showResult" class="modal modal-blur fade show d-block" style="background:rgba(0,0,0,0.5)">
-            <div class="modal-dialog modal-md modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-body text-center py-4">
-                        <div style="font-size:3.5rem;">📦</div>
-                        <h3>Клон готовий до завантаження!</h3>
-                        <p class="text-muted">Архів сформовано та збережено на сервері.</p>
-                        
-                        <div class="my-4 d-flex flex-column align-items-center gap-3">
-                            <div class="p-3 bg-white rounded shadow-sm" style="width:240px;height:240px;">
-                                <img :src="qrUrl" alt="Clone QR" style="width:100%;height:100%;">
-                            </div>
-                            
-                            <div class="w-100">
-                                <label class="form-label small text-start">Команда для Termux (Android):</label>
-                                <div class="input-group mb-2">
-                                    <input type="text" class="form-control form-control-sm font-monospace bg-dark text-info" readonly :value="termuxCommand">
-                                    <button class="btn btn-sm btn-info" @click="copyCommand">
-                                        {{ copySuccess ? '👍' : 'Копіювати' }}
-                                    </button>
-                                </div>
-                                <label class="form-label small text-start">Пряме посилання:</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control form-control-sm" readonly :value="absoluteUrl">
-                                    <button class="btn btn-sm btn-outline-primary" @click="copyLink">
-                                        {{ copyLinkSuccess ? '✔' : 'Ланка' }}
-                                    </button>
-                                </div>
+                <!-- Summary -->
+                <div class="option-card mb-4">
+                    <div class="option-card-title mb-3">📊 Підсумок</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="summary-pill" v-for="m in selectedModules" :key="m">{{ m }}</div>
+                        <div v-if="!selectedModules.length" class="text-muted small">Нічого не обрано</div>
+                    </div>
+                    <div class="small text-muted mt-2">+ Core: eme, profiles, system_settings, eme_nav (авто)</div>
+                </div>
+
+                <!-- Create Button -->
+                <button class="btn btn-primary w-100 mb-3"
+                    :disabled="loading || !selectedModules.length"
+                    @click="createClone"
+                    style="padding: 0.75rem; font-size: 1rem;">
+                    <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+                    {{ loading ? 'Пакування...' : '📦 Згенерувати Клон' }}
+                </button>
+
+                <!-- Result Card -->
+                <transition name="fade">
+                    <div v-if="showResult" class="result-card p-4">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <span style="font-size: 3rem;">✅</span>
+                            <div>
+                                <div class="fw-bold fs-4">Клон готовий!</div>
+                                <div class="text-muted small">{{ resultFilename }} · {{ resultSizeKb }} KB</div>
                             </div>
                         </div>
 
-                        <div class="alert alert-info py-2 small text-start">
-                            <strong>Інструкція для телефона:</strong>
-                            <ol class="mb-0 ps-3">
-                                <li>Відкрийте <b>Termux</b>.</li>
-                                <li>Вставте скопійовану команду.</li>
-                                <li>Система сама завантажить клон, налаштує віртуальне оточення та запустить сервер.</li>
+                        <!-- QR Code -->
+                        <div class="text-center mb-4">
+                            <div class="d-inline-block p-2 rounded" style="background:white;">
+                                <img :src="qrUrl" alt="QR" style="width:180px;height:180px;">
+                            </div>
+                            <div class="small text-muted mt-2">Відскануйте QR в Termux на телефоні</div>
+                        </div>
+
+                        <!-- Termux Command -->
+                        <div class="mb-3">
+                            <div class="small text-muted mb-1">📱 Команда для Termux:</div>
+                            <div class="code-block d-flex align-items-start gap-2">
+                                <code class="flex-grow-1" style="white-space: pre-wrap; word-break: break-all; font-size: .75rem;">{{ termuxCommand }}</code>
+                                <button class="btn btn-xs btn-ghost-secondary flex-shrink-0" @click="copy(termuxCommand, 'cmd')">{{ copied === 'cmd' ? '✓' : '📋' }}</button>
+                            </div>
+                        </div>
+
+                        <!-- Direct Link -->
+                        <div class="mb-3">
+                            <div class="small text-muted mb-1">🔗 Пряме посилання:</div>
+                            <div class="code-block d-flex align-items-center gap-2">
+                                <code class="flex-grow-1" style="font-size: .75rem;">{{ absoluteUrl }}</code>
+                                <button class="btn btn-xs btn-ghost-secondary" @click="copy(absoluteUrl, 'link')">{{ copied === 'link' ? '✓' : '📋' }}</button>
+                            </div>
+                        </div>
+
+                        <!-- Setup Instructions -->
+                        <div class="mt-3 p-3 rounded" style="background: rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.1);">
+                            <div class="fw-bold mb-2 small">📋 Інструкція встановлення</div>
+                            <ol class="small text-muted mb-0 ps-3">
+                                <li>Відкрийте <strong>Termux</strong> на телефоні.</li>
+                                <li>Відскануйте QR або вставте команду.</li>
+                                <li>Система сама завантажить, розпакує та запустить EME.</li>
+                                <li>Відкрийте браузер: <code>http://localhost:8000</code></li>
                             </ol>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-primary w-100" @click="showResult=false">Зрозуміло</button>
-                    </div>
-                </div>
+                </transition>
+
             </div>
         </div>
+
     </div>
 </template>
 
@@ -129,59 +165,92 @@ export default {
     data() {
         return {
             modules: [],
-            selectedModules: ['eme', 'profiles', 'system_settings', 'eme_nav', 'eme_media', 'network'],
+            selectedModules: ['projects', 'network', 'eme_media', 'clone_master'],
             includeDb: false,
             includeMedia: false,
+            includeSeeds: true,
+            cloneName: '',
             loading: false,
             showResult: false,
             resultUrl: '',
             resultFilename: '',
+            resultSizeKb: 0,
+            resultModulesCount: 0,
             serverIp: '',
-            copySuccess: false,
-            copyLinkSuccess: false
-        }
+            copied: null,
+        };
     },
-    mounted() {
-        this.fetchModules();
-        this.fetchIp();
+    computed: {
+        absoluteUrl() {
+            if (!this.resultUrl) return '';
+            const base = this.serverIp ? `http://${this.serverIp}:8000` : window.location.origin;
+            return base + this.resultUrl;
+        },
+        termuxCommand() {
+            if (!this.absoluteUrl) return '';
+            const dir = this.cloneName || 'eme';
+            return `pkg install -y python curl unzip git && mkdir -p ${dir} && cd ${dir} && curl -L "${this.absoluteUrl}" -o clone.zip && unzip -o clone.zip && rm clone.zip && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt && python manage.py migrate && bash start.sh`;
+        },
+        qrUrl() {
+            if (!this.termuxCommand) return '';
+            return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(this.absoluteUrl)}`;
+        },
     },
     methods: {
+        hdrs() {
+            const token = localStorage.getItem('access_token');
+            return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+        },
+        isSelected(id) {
+            return this.selectedModules.includes(id);
+        },
+        toggleModule(id) {
+            const idx = this.selectedModules.indexOf(id);
+            if (idx === -1) {
+                this.selectedModules.push(id);
+                // Auto-add deps
+                const mod = this.modules.find(m => m.id === id);
+                if (mod?.deps) {
+                    mod.deps.forEach(dep => {
+                        if (!this.selectedModules.includes(dep)) this.selectedModules.push(dep);
+                    });
+                }
+            } else {
+                this.selectedModules.splice(idx, 1);
+            }
+        },
         async fetchModules() {
             try {
-                const res = await fetch('/api/clone/modules/', { headers: this.auth() });
-                if (res.ok) {
-                    const data = await res.json();
-                    this.modules = data.filter(m => !m.is_system);
-                }
-            } catch (e) { }
+                const res = await fetch('/api/clone/modules/', { headers: this.hdrs() });
+                if (res.ok) this.modules = await res.json();
+            } catch (e) {}
         },
         async fetchIp() {
             try {
-                const res = await fetch('/api/clone/ip/', { headers: this.auth() });
-                if (res.ok) {
-                    const data = await res.json();
-                    this.serverIp = data.ip;
-                }
-            } catch (e) { }
+                const res = await fetch('/api/clone/ip/', { headers: this.hdrs() });
+                if (res.ok) this.serverIp = (await res.json()).ip;
+            } catch (e) {}
         },
         async createClone() {
             this.loading = true;
+            this.showResult = false;
             try {
                 const res = await fetch('/api/clone/create/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...this.auth() },
+                    method: 'POST', headers: this.hdrs(),
                     body: JSON.stringify({
                         modules: this.selectedModules,
                         include_db: this.includeDb,
-                        include_media: this.includeMedia
+                        include_media: this.includeMedia,
+                        include_seeds: this.includeSeeds,
+                        clone_name: this.cloneName || undefined,
                     })
                 });
-                
                 if (res.ok) {
                     const data = await res.json();
                     this.resultUrl = data.url;
                     this.resultFilename = data.filename;
-                    
+                    this.resultSizeKb = data.size_kb;
+                    this.resultModulesCount = data.modules_count;
                     this.showResult = true;
                 } else {
                     alert('Помилка при створенні клону');
@@ -192,42 +261,166 @@ export default {
                 this.loading = false;
             }
         },
-        copyCommand() {
-            navigator.clipboard.writeText(this.termuxCommand);
-            this.copySuccess = true;
-            setTimeout(() => this.copySuccess = false, 2000);
+        copy(text, key) {
+            navigator.clipboard.writeText(text);
+            this.copied = key;
+            setTimeout(() => this.copied = null, 2000);
         },
-        copyLink() {
-            navigator.clipboard.writeText(this.absoluteUrl);
-            this.copyLinkSuccess = true;
-            setTimeout(() => this.copyLinkSuccess = false, 2000);
-        }
     },
-    computed: {
-        absoluteUrl() {
-            if (!this.resultUrl) return '';
-            const base = this.serverIp ? `http://${this.serverIp}:8000` : window.location.origin;
-            return base + this.resultUrl;
-        },
-        termuxCommand() {
-            if (!this.absoluteUrl) return '';
-            const dir = `eme_clone_${Math.floor(Date.now() / 1000)}`;
-            return `pkg install -y curl unzip && mkdir -p ${dir} && cd ${dir} && curl -L "${this.absoluteUrl}" -o clone.zip && unzip -o clone.zip && rm clone.zip && bash start.sh`;
-        },
-        qrUrl() {
-            if (!this.termuxCommand) return '';
-            // QR standard size for long commands
-            return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(this.termuxCommand)}`;
-        }
+    mounted() {
+        this.fetchModules();
+        this.fetchIp();
     }
-}
+};
 </script>
 
 <style scoped>
-.eme-app-title {
+.clone-shell {
+    background: #0d0f1a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.clone-header {
+    background: rgba(26, 28, 46, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 1.25rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.clone-title {
     font-size: 1.4rem;
     font-weight: 800;
-    color: var(--tblr-purple);
-    margin: 0;
+    letter-spacing: -0.02em;
+    background: var(--eme-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.clone-sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: rgba(18, 20, 34, 0.6);
+    border-right: 1px solid rgba(255,255,255,0.05);
+    backdrop-filter: blur(8px);
+}
+
+/* MODULE ITEMS */
+.mod-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background .15s;
+    border-left: 3px solid transparent;
+}
+.mod-item:hover { background: rgba(255,255,255,0.04); }
+.mod-item.active {
+    background: rgba(0,229,255,0.07);
+    border-left-color: #00e5ff;
+}
+.mod-item.mod-system { opacity: 0.7; pointer-events: none; border-left-color: rgba(59,130,246,0.4); }
+
+.check-box {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem;
+    flex-shrink: 0;
+    margin-top: 3px;
+    transition: all .15s;
+}
+.check-box.checked {
+    background: #00e5ff;
+    border-color: #00e5ff;
+    color: #0d0f1a;
+    font-weight: 900;
+}
+
+.mod-desc { font-size: .75rem; color: #64748b; margin-top: 2px; }
+.mod-deps { font-size: .7rem; color: #3b82f6; margin-top: 2px; }
+.mod-check { padding-top: 2px; }
+
+/* OPTION CARDS */
+.option-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 1.25rem;
+}
+.option-card-title {
+    font-weight: 700;
+    font-size: .9rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: .78rem;
+}
+.option-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .75rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.option-row:last-child { border-bottom: none; }
+
+/* SUMMARY PILLS */
+.summary-pill {
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: .78rem;
+    color: #00e5ff;
+}
+
+/* RESULT */
+.result-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(0,229,255,0.12);
+    border-radius: 16px;
+}
+.code-block {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: monospace;
+    color: #a5f3fc;
+}
+
+/* FORM OVERRIDES */
+.form-control {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 10px;
+}
+.form-control:focus {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(0,229,255,0.4);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+    color: white;
+}
+.form-control::placeholder { color: #4a5568; }
+.form-check-input:checked { background-color: #00e5ff; border-color: #00e5ff; }
+
+.fade-enter-active, .fade-leave-active { transition: opacity .4s, transform .3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(12px); }
+
+@media (max-width: 768px) {
+    .clone-sidebar { width: 100%; border-right: none; }
 }
 </style>

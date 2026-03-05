@@ -290,6 +290,7 @@ export default {
             ],
             domains: [
                 { key: 'life', label: '❤️ Особисте', color: '#ff4757' },
+                { key: 'life', label: '❤️ Особисте', color: '#ff4757' },
                 { key: 'business', label: '💼 Бізнес', color: '#ffa502' },
                 { key: 'eme', label: '⚡ EME', color: '#00e5ff' },
                 { key: 'tech', label: '🔧 Технічне', color: '#2ed573' },

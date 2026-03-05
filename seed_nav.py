@@ -8,6 +8,8 @@ items = [
     dict(item_id='projects',   icon='📋',  label='Проекти',       order=4, url='projects'),
     dict(item_id='network',    icon='🌐',  label='Мережа',        order=5, url='network'),
     dict(item_id='clone_master', icon='📦', label='Клон Мастер',   order=6, url='clone_master'),
+    dict(item_id='kb',         icon='📚',  label='База Знань',    order=7, url='kb'),
+    dict(item_id='chat',       icon='💬',  label='Чат',           order=8, url='chat'),
 ]
 
 for d in items:

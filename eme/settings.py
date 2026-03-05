@@ -26,6 +26,9 @@ INSTALLED_APPS = [
     'clone_master',
     'projects',
     'eme_ai',
+    'eme_kb',
+    'eme_chat',
+    'park_adventures',
 ]
 
 MIDDLEWARE = [

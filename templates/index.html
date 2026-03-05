@@ -17,6 +17,8 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <!-- Vue3 SFC Loader -->
     <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader@0.8.4/dist/vue3-sfc-loader.js"></script>
+    <!-- jsQR for QR Code scanning -->
+    <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
 
     <style>
         :root {
@@ -55,6 +57,9 @@
         <!-- SCREEN: SHELL -->
         <eme-shell v-if="view === 'shell'" :nav-items="navItems" v-model:active-app="activeApp" @logout="logout">
             <!-- APP MODULES -->
+            <eme-apps-store v-if="activeApp === 'apps_store'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-apps-store>
+
             <eme-my-page v-if="activeApp === 'my_page'" :user="user" :visiting-user="visitingUser"
                 @return="visitingUser = null" @close="activeApp = null"></eme-my-page>
 
@@ -72,6 +77,16 @@
 
             <eme-clone-master v-if="activeApp === 'clone_master'" :user="user" :auth="auth"
                 @close="activeApp = null"></eme-clone-master>
+
+            <eme-kb v-if="activeApp === 'kb'" :user="user" :auth="auth" @close="activeApp = null"></eme-kb>
+
+            <eme-chat v-if="activeApp === 'chat'" :user="user" :auth="auth" @close="activeApp = null"></eme-chat>
+
+            <eme-park-adventures v-if="activeApp === 'park_adventures'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-park-adventures>
+
+            <eme-park-adventures-admin v-if="activeApp === 'park_adventures_admin'" :user="user"
+                :auth="auth"></eme-park-adventures-admin>
 
         </eme-shell>
     </div>
@@ -169,9 +184,9 @@
 
         // Register components
         const components = [
-            'EmeAuthScreen', 'EmeShell', 'EmeMyPage',
+            'EmeAuthScreen', 'EmeShell', 'EmeMyPage', 'EmeAppsStore',
             'EmeGallery', 'EmeNetwork', 'EmeSettings', 'EmeProjects', 'EmeCloneMaster',
-            'EmeProjectDetail'
+            'EmeProjectDetail', 'EmeKb', 'EmeChat', 'EmeParkAdventures', 'EmeParkAdventuresAdmin'
         ];
 
         components.forEach(name => {

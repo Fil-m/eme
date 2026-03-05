@@ -15,6 +15,9 @@ urlpatterns = [
     path('api/clone/', include('clone_master.urls')),
     path('api/projects/', include('projects.urls')),
     path('api/ai/', include('eme_ai.urls')),
+    path('api/kb/', include('eme_kb.urls')),
+    path('api/chat/', include('eme_chat.urls')),
+    path('api/game/', include('park_adventures.urls')),
     # Simple project detail page
     path('p/<int:pk>/', ProjectPageView.as_view(), name='project-page'),
     # Entry point for the SPA
