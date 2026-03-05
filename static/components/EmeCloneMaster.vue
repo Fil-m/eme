@@ -16,8 +16,11 @@
 
             <!-- LEFT: Module Selector -->
             <div class="clone-sidebar overflow-auto">
-                <div class="px-4 pt-3 pb-2">
-                    <div class="small fw-bold text-muted mb-2" style="letter-spacing:1px;">МОДУЛІ</div>
+                <div class="px-4 pt-3 pb-2 d-flex justify-content-between align-items-center">
+                    <div class="small fw-bold text-muted" style="letter-spacing:1px;">МОДУЛІ</div>
+                    <button class="btn btn-xs btn-ghost-primary" @click="selectAllModules" style="font-size: 10px;">
+                        {{ selectedModules.length === modules.length && modules.length > 0 ? 'Зняти всі' : 'Вибрати всі' }}
+                    </button>
                 </div>
 
                 <div v-for="mod in modules" :key="mod.id"
@@ -93,6 +96,13 @@
                     </div>
                     <div class="small text-muted mt-2">+ Core: eme, profiles, system_settings, eme_nav (авто)</div>
                 </div>
+
+                <!-- Quick Full Backup Button -->
+                <button v-if="selectedModules.length < modules.length || !includeDb || !includeMedia" class="btn btn-outline-info w-100 mb-2"
+                    @click="setupFullBackup"
+                    style="padding: 0.5rem; font-size: 0.9rem;">
+                    🚀 Підготувати повний бекап всього сайту
+                </button>
 
                 <!-- Create Button -->
                 <button class="btn btn-primary w-100 mb-3"
@@ -193,7 +203,7 @@ export default {
         },
         qrUrl() {
             if (!this.termuxCommand) return '';
-            return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(this.absoluteUrl)}`;
+            return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(this.termuxCommand)}`;
         },
     },
     methods: {
@@ -218,6 +228,21 @@ export default {
             } else {
                 this.selectedModules.splice(idx, 1);
             }
+        },
+        selectAllModules() {
+            if (this.selectedModules.length === this.modules.length && this.modules.length > 0) {
+                // Deselect all non-system
+                this.selectedModules = this.modules.filter(m => m.is_system).map(m => m.id);
+            } else {
+                this.selectedModules = this.modules.map(m => m.id);
+            }
+        },
+        setupFullBackup() {
+            this.selectedModules = this.modules.map(m => m.id);
+            this.includeDb = true;
+            this.includeMedia = true;
+            this.includeSeeds = true;
+            this.cloneName = 'eme_full_backup';
         },
         async fetchModules() {
             try {

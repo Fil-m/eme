@@ -16,6 +16,11 @@ class ProjectListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        owner_id = self.request.query_params.get('owner')
+        if owner_id:
+            if str(owner_id) == str(self.request.user.id):
+                return Project.objects.filter(owner=self.request.user)
+            return Project.objects.filter(owner_id=owner_id, is_public=True)
         return Project.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):

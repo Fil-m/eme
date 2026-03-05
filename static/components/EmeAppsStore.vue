@@ -74,6 +74,15 @@ export default {
                     icon: '🐉',
                     color: '#4ca528',
                     developer: 'EME Community'
+                },
+                {
+                    id: 'qr_generator',
+                    category: 'utils',
+                    name: 'QR Генератор',
+                    description: 'Швидке створення QR-кодів з будь-якого тексту.',
+                    icon: '🔍',
+                    color: '#00e5ff',
+                    developer: 'EME Utilities'
                 }
             ]
         };

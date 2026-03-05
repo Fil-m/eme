@@ -9,6 +9,8 @@
 
     <!-- Tabler CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <!-- Inter font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
@@ -60,8 +62,9 @@
             <eme-apps-store v-if="activeApp === 'apps_store'" :user="user" :auth="auth"
                 @close="activeApp = null"></eme-apps-store>
 
-            <eme-my-page v-if="activeApp === 'my_page'" :user="user" :visiting-user="visitingUser"
-                @return="visitingUser = null" @close="activeApp = null"></eme-my-page>
+            <eme-my-page v-if="activeApp === 'my_page'" :user="user" :visiting-user="visitingUser" :auth="auth"
+                @update-user-avatar="user.avatar = $event" @refresh-user="loadInitialData" @return="visitingUser = null"
+                @close="activeApp = null"></eme-my-page>
 
             <eme-gallery v-if="activeApp === 'gallery'" :user="user" :visiting-user="visitingUser" :auth="auth"
                 @return="visitingUser = null" @close="activeApp = null"></eme-gallery>
@@ -82,6 +85,9 @@
 
             <eme-chat v-if="activeApp === 'chat'" :user="user" :auth="auth" @close="activeApp = null"></eme-chat>
 
+            <eme-qr-generator v-if="activeApp === 'qr_generator'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-qr-generator>
+
             <eme-park-adventures v-if="activeApp === 'park_adventures'" :user="user" :auth="auth"
                 @close="activeApp = null"></eme-park-adventures>
 
@@ -95,11 +101,14 @@
         const { createApp, defineAsyncComponent } = Vue;
         const { loadModule } = window['vue3-sfc-loader'];
 
+        const appVersion = Date.now();
         const loaderOptions = {
             moduleCache: { vue: Vue },
             async getFile(url) {
-                const res = await fetch(url);
-                if (!res.ok) throw Object.assign(new Error(res.statusText + ' ' + url), { res });
+                // Keep the original URL for identifier check, but fetch with cache buster
+                const finalUrl = url.includes('?') ? `${url}&v=${appVersion}` : `${url}?v=${appVersion}`;
+                const res = await fetch(finalUrl);
+                if (!res.ok) throw Object.assign(new Error(res.statusText + ' ' + finalUrl), { res });
                 return {
                     getContentData: (asBinary) => asBinary ? res.arrayBuffer() : res.text(),
                 };
@@ -195,7 +204,7 @@
         const components = [
             'EmeAuthScreen', 'EmeShell', 'EmeMyPage', 'EmeAppsStore',
             'EmeGallery', 'EmeNetwork', 'EmeSettings', 'EmeProjects', 'EmeCloneMaster',
-            'EmeProjectDetail', 'EmeKb', 'EmeChat', 'EmeParkAdventures', 'EmeParkAdventuresAdmin'
+            'EmeProjectDetail', 'EmeKb', 'EmeChat', 'EmeQrGenerator', 'EmeParkAdventures', 'EmeParkAdventuresAdmin'
         ];
 
         components.forEach(name => {

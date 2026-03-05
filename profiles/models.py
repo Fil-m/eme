@@ -45,3 +45,30 @@ class FollowRelation(models.Model):
 
     def __str__(self):
         return f"{self.follower.username} → {self.following.username}"
+
+
+class WallPost(models.Model):
+    owner = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='wall_posts')
+    author = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='written_posts')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    likes_count = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Post by {self.author.username} on {self.owner.username}'s wall"
+
+
+class WallComment(models.Model):
+    post = models.ForeignKey(WallPost, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(EMEUser, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on post {self.post.id}"

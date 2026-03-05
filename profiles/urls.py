@@ -1,10 +1,16 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
     RegisterView, MeView, SocialLinkCreateView, SocialLinkDestroyView,
     UserListView, UserDetailView, ChangePasswordView, AvatarUploadView,
     LogoutView, FollowView, UnfollowView, FollowersListView, FollowingListView,
+    WallPostViewSet, WallCommentViewSet
 )
+
+router = DefaultRouter()
+router.register(r'wall-posts', WallPostViewSet)
+router.register(r'wall-comments', WallCommentViewSet)
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -22,4 +28,5 @@ urlpatterns = [
     path('users/<int:pk>/unfollow/', UnfollowView.as_view(), name='unfollow'),
     path('users/<int:pk>/followers/', FollowersListView.as_view(), name='followers'),
     path('users/<int:pk>/following/', FollowingListView.as_view(), name='following'),
+    path('', include(router.urls)),
 ]

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import EMEUser, SocialLink, FollowRelation
+from .models import EMEUser, SocialLink, FollowRelation, WallPost, WallComment
 from django.utils import timezone
 import datetime
 
@@ -72,3 +72,22 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError('Неправильний поточний пароль.')
         return value
+
+
+class WallCommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.ReadOnlyField(source='author.username')
+    
+    class Meta:
+        model = WallComment
+        fields = ['id', 'author', 'author_name', 'content', 'created_at']
+        read_only_fields = ['author']
+
+
+class WallPostSerializer(serializers.ModelSerializer):
+    author_name = serializers.ReadOnlyField(source='author.username')
+    comments = WallCommentSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = WallPost
+        fields = ['id', 'owner', 'author', 'author_name', 'content', 'created_at', 'likes_count', 'comments']
+        read_only_fields = ['owner', 'author', 'likes_count']

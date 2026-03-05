@@ -55,23 +55,26 @@ class MediaFileViewSet(viewsets.ModelViewSet):
         user_id = self.request.query_params.get('user_id')
 
         if user_id:
-            from profiles.models import FollowRelation
-            is_friend = FollowRelation.objects.filter(
-                follower_id=user_id, following=user
-            ).exists() and FollowRelation.objects.filter(
-                follower=user, following_id=user_id
-            ).exists()
-
-            if is_friend:
-                qs = MediaFile.objects.filter(
-                    models.Q(user_id=user_id, visibility__in=['friends', 'public']) |
-                    models.Q(user=user)
-                )
+            if str(user_id) == str(user.id):
+                qs = MediaFile.objects.filter(user=user)
             else:
-                qs = MediaFile.objects.filter(
-                    models.Q(user_id=user_id, visibility='public') |
-                    models.Q(user=user)
-                )
+                from profiles.models import FollowRelation
+                is_friend = FollowRelation.objects.filter(
+                    follower_id=user_id, following=user
+                ).exists() and FollowRelation.objects.filter(
+                    follower=user, following_id=user_id
+                ).exists()
+
+                if is_friend:
+                    qs = MediaFile.objects.filter(
+                        models.Q(user_id=user_id, visibility__in=['friends', 'public']) |
+                        models.Q(user=user)
+                    )
+                else:
+                    qs = MediaFile.objects.filter(
+                        models.Q(user_id=user_id, visibility='public') |
+                        models.Q(user=user)
+                    )
         else:
             qs = MediaFile.objects.filter(user=user)
 

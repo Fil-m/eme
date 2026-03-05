@@ -1,13 +1,13 @@
-from rest_framework import generics, permissions, status, parsers
+from rest_framework import generics, permissions, status, parsers, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.shortcuts import get_object_or_404
-from .models import EMEUser, SocialLink, FollowRelation
+from .models import EMEUser, SocialLink, FollowRelation, WallPost, WallComment
 from .serializers import (
     EMEUserSerializer, RegisterSerializer, SocialLinkSerializer,
-    ChangePasswordSerializer,
+    ChangePasswordSerializer, WallPostSerializer, WallCommentSerializer
 )
 
 
@@ -147,3 +147,31 @@ class FollowingListView(generics.ListAPIView):
         user = get_object_or_404(EMEUser, pk=self.kwargs['pk'])
         following_ids = user.following.values_list('following_id', flat=True)
         return EMEUser.objects.filter(id__in=following_ids)
+
+
+class WallPostViewSet(viewsets.ModelViewSet):
+    queryset = WallPost.objects.all()
+    serializer_class = WallPostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        owner_id = self.request.query_params.get('owner')
+        if owner_id:
+            return WallPost.objects.filter(owner_id=owner_id)
+        return WallPost.objects.all()
+
+    def perform_create(self, serializer):
+        owner_id = self.request.data.get('owner')
+        if owner_id:
+            serializer.save(author=self.request.user, owner_id=owner_id)
+        else:
+            serializer.save(author=self.request.user, owner=self.request.user)
+
+
+class WallCommentViewSet(viewsets.ModelViewSet):
+    queryset = WallComment.objects.all()
+    serializer_class = WallCommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
