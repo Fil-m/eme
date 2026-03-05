@@ -136,6 +136,15 @@
                             fetch('/api/nav/items/', { headers: this.auth() }),
                             fetch('/api/settings/me/', { headers: this.auth() })
                         ]);
+
+                        if (uRes.status === 401 || navRes.status === 401 || setRes.status === 401) {
+                            console.warn("Token rejected (401). Forcing logout.");
+                            localStorage.removeItem('access_token');
+                            localStorage.removeItem('refresh_token');
+                            this.view = 'auth';
+                            return;
+                        }
+
                         this.user = await uRes.json();
                         const navData = await navRes.json();
                         this.navItems = navData.results || navData;
@@ -169,7 +178,7 @@
                 const token = localStorage.getItem('access_token');
                 if (token && token !== 'undefined') {
                     await this.loadInitialData();
-                    if (this.user.id) {
+                    if (this.user.id && this.view !== 'auth') {
                         this.view = 'shell';
                         // Heartbeat
                         setInterval(() => {
