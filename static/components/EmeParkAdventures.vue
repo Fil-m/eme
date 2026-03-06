@@ -4,24 +4,23 @@
     :class="[backgroundClass, scannerMinimized ? 'park-adventures-wrapper--scanner-minimized' : 'park-adventures-wrapper--scanner-expanded']"
   >
     <div class="container">
-      <!-- Materials Row -->
-      <div class="materials">
-        <div class="btn_container btn_wood">
-          <div>{{ player.wood }}</div>
-        </div>
-        <div class="btn_container btn_iron">
-          <div>{{ player.iron }}</div>
-        </div>
-        <div class="btn_container btn_gold">
-          <div>{{ player.gold }}</div>
-        </div>
-      </div>
-
-      <!-- Right Group: Health -->
-      <div class="right_group">
+      <div class="top_hud">
         <div class="btn_container btn_health player-health">
           <div>{{ player.life }}</div>
         </div>
+
+        <div class="materials">
+          <div class="btn_container btn_wood">
+            <div>{{ player.wood }}</div>
+          </div>
+          <div class="btn_container btn_iron">
+            <div>{{ player.iron }}</div>
+          </div>
+          <div class="btn_container btn_gold">
+            <div>{{ player.gold }}</div>
+          </div>
+        </div>
+
         <div class="btn_container btn_dragon_health dragon-health">
           <div>{{ player.dragon_life }}</div>
         </div>
@@ -444,16 +443,25 @@ export default {
     min-height: clamp(500px, 62vh, 660px);
 }
 
-.materials {
+.top_hud {
     position: absolute;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: block;
+    padding: 0;
+    z-index: 6;
+}
+
+.materials {
+    position: static;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: clamp(14px, 2vw, 22px);
-    z-index: 6;
+    width: max-content;
+    margin: 0 auto;
 }
 
 .mode-text {
@@ -464,7 +472,7 @@ export default {
     position: relative;
     width: 100%;
     min-height: clamp(500px, 62vh, 660px);
-    margin-top: clamp(120px, 16vh, 168px);
+    margin-top: clamp(156px, 19vh, 214px);
 }
 
 #buttons_form button {
@@ -549,8 +557,7 @@ export default {
     background-size: contain;
 }
 
-.materials .btn_container > div,
-.right_group .btn_container > div {
+.top_hud .btn_container > div {
     min-width: var(--hud-badge-size);
     height: var(--hud-badge-size);
     padding: 0 11px;
@@ -564,37 +571,26 @@ export default {
     line-height: 1;
 }
 
-.right_group {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    pointer-events: none;
-    z-index: 5;
-}
-
-.right_group .btn_container {
-    pointer-events: auto;
-}
-
 .btn_container.btn_health.player-health {
     position: absolute;
-    left: 4px;
-    top: calc(var(--stage-center-y) - 96px);
+    top: -6px;
+    left: -14px;
     width: var(--player-health-size);
     height: var(--player-health-size);
+    margin-top: 0;
     background-size: 180% auto;
     background-position: center;
 }
 
 .btn_container.btn_dragon_health.dragon-health {
     position: absolute;
-    right: 6px;
-    top: calc(var(--stage-center-y) - 84px);
+    top: 0;
+    right: 0;
     width: var(--status-icon-size);
     height: var(--status-icon-size);
+    margin-top: 0;
     background-size: contain;
+    background-position: right top;
 }
 
 input[type="checkbox"] {
@@ -608,8 +604,8 @@ input[type="checkbox"] {
 
 .input_wrap {
     position: absolute;
-    top: clamp(18px, 3.5vh, 30px);
-    right: clamp(92px, 11vw, 148px);
+    top: 0;
+    right: clamp(24px, 5vw, 72px);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -674,6 +670,18 @@ input[type="checkbox"] {
     z-index: 5;
 }
 
+.park-adventures-wrapper.fight_view .right_btns {
+    position: absolute;
+    top: 72px;
+    right: clamp(20px, 4vw, 44px);
+    width: 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    z-index: 5;
+}
+
 .right_btns .btn_container {
     width: var(--tool-size);
     height: var(--tool-size);
@@ -683,12 +691,24 @@ input[type="checkbox"] {
     background-size: contain;
 }
 
+.park-adventures-wrapper.fight_view .right_btns .btn_container {
+    width: 96px;
+    height: 96px;
+    padding: 4px;
+    background-size: contain;
+}
+
 .right_btns .btn_container p {
     font-size: clamp(18px, 1.9vw, 24px);
     padding: 5px 10px;
     border-radius: 999px;
     background: rgba(6, 12, 18, 0.78);
     border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.park-adventures-wrapper.fight_view .right_btns .btn_container p {
+    font-size: 14px;
+    padding: 3px 6px;
 }
 
 .bottom_group {
@@ -966,20 +986,23 @@ input[type="checkbox"] {
         min-height: 400px;
     }
 
+    .top_hud {
+        width: 100%;
+        padding: 0;
+    }
+
     .materials {
-        top: 4px;
         gap: 8px;
     }
 
-    .materials .btn_container > div,
-    .right_group .btn_container > div {
+    .top_hud .btn_container > div {
         padding: 0 8px;
         font-size: 14px;
     }
 
     .input_wrap {
-        top: 8px;
-        right: 64px;
+        top: 0;
+        right: 18px;
         gap: 8px;
         padding: 8px 10px;
     }
@@ -995,21 +1018,19 @@ input[type="checkbox"] {
 
     #buttons_form {
         min-height: 360px;
-        margin-top: 96px;
-    }
-
-    .right_group {
-        width: 100%;
+        margin-top: 128px;
     }
 
     .btn_container.btn_health.player-health {
-        left: 2px;
-        top: calc(var(--stage-center-y) - 72px);
+        top: -4px;
+        left: -10px;
+        margin-top: 0;
     }
 
     .btn_container.btn_dragon_health.dragon-health {
-        right: 2px;
-        top: calc(var(--stage-center-y) - 62px);
+        top: 0;
+        right: 0;
+        margin-top: 0;
     }
 
     .right_btns {
@@ -1019,9 +1040,22 @@ input[type="checkbox"] {
         gap: 12px;
     }
 
+    .park-adventures-wrapper.fight_view .right_btns {
+        top: 60px;
+        right: 12px;
+        width: 96px;
+        gap: 10px;
+    }
+
     .right_btns .btn_container {
         width: var(--tool-size);
         height: var(--tool-size);
+        padding: 4px;
+    }
+
+    .park-adventures-wrapper.fight_view .right_btns .btn_container {
+        width: 96px;
+        height: 96px;
         padding: 4px;
     }
 
