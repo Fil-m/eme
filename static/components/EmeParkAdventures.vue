@@ -95,55 +95,35 @@
 
       <!-- Scanner Area -->
       <div class="qr-section">
-        <div class="qr-container-pure">
-          <!-- Prominent Trigger Button -->
-          <button v-if="!scannerExpanded" 
-                  class="btn btn-success w-100 mb-2 py-3 fw-bold scanner-trigger-btn animate-pulse" 
-                  @click="scannerExpanded = true">
-              🔍 ВІДКРИТИ СКАНЕР QR
-          </button>
-
-          <!-- Summary card if expanded -->
-          <div class="scanner-summary mb-2" v-if="scannerExpanded && !lastFound">
-            <div class="scanner-summary__empty">Знайдіть QR-код у парку,<br>щоб отримати ресурси</div>
+        <div class="qr-container-pure glass-card">
+          <!-- Status -->
+          <div id="qr-result" class="scanner-status-text mb-2" v-if="lastFound">
+             <div class="fw-bold text-success small">✅ Знайдено: {{ lastFound }}</div>
           </div>
-          
-          <div id="qr-result" class="scanner-summary scanner-summary--active mb-2" v-if="lastFound">
-             <div class="fw-bold text-success mb-1">Знайдено: {{ lastFound }}</div>
-             <div class="small opacity-75">Натисніть кнопку нижче, щоб отримати!</div>
+          <div v-else class="scanner-status-text mb-2 opacity-50 small">
+             Наведіть на QR-код
           </div>
 
           <!-- Video / Fallback -->
-          <div class="video-container-wrapper" v-if="cameraSupported">
-               <div class="video-wrapper" 
-                    :class="{'video-wrapper--expanded': scannerExpanded, 'video-wrapper--minimized': !scannerExpanded, 'video-wrapper--ready': lastFound}"
-                    @click="scannerExpanded = !scannerExpanded">
-                 
+          <div class="video-container-static" v-if="cameraSupported">
+               <div class="video-wrapper-static" :class="{'video-wrapper--ready': lastFound}">
                  <video ref="qrVideo" playsinline autoplay muted></video>
                  <canvas ref="qrCanvas" style="display: none;"></canvas>
-                 
-                 <div class="scanner-frame" v-if="scannerExpanded"></div>
-                 <div class="scanner-status" v-if="scannerExpanded">
-                    {{ isScanning ? 'Аналіз...' : 'Наведіть на код' }}
-                 </div>
-                 <div class="scanner-zoom-indicator">
-                    {{ scannerExpanded ? 'TAP TO CLOSE' : 'TAP TO SCAN' }}
-                 </div>
+                 <div class="scanner-frame-overlay"></div>
                </div>
           </div>
           
-          <div v-else class="scanner-fallback p-3 text-center glass-card border-dashed">
-             <p class="small mb-2">📷 Камера заблокована.<br>Використовуйте фото:</p>
-             <label class="btn btn-sm btn-success w-100">
-                <span>📂 Обрати QR</span>
+          <div v-else class="scanner-fallback-static p-2 text-center border-dashed">
+             <p class="small mb-1">📷 Блокування</p>
+             <label class="btn btn-xs btn-success w-100 py-1">
+                <span>📂 Фото QR</span>
                 <input type="file" accept="image/*" capture="environment" @change="onFileScan" style="display: none;">
              </label>
           </div>
 
-          <!-- Actions -->
-          <div class="qr-actions mt-2 d-flex gap-2" v-if="scannerExpanded">
-             <button id="send-qrcode" class="btn btn-primary flex-grow-1" @click="scanQR" :disabled="loading || !lastFound">Отримати!</button>
-             <button class="btn btn-secondary scanner-secondary" @click="scannerExpanded = false">✕</button>
+          <!-- Action -->
+          <div class="qr-actions mt-2">
+             <button id="send-qrcode" class="btn btn-primary btn-sm w-100" @click="scanQR" :disabled="loading || !lastFound">Отримати!</button>
           </div>
         </div>
       </div>
@@ -170,8 +150,7 @@ export default {
             loading: false,
             isScanning: false,
             scanInterval: null,
-            cameraSupported: true,
-            scannerExpanded: false
+            cameraSupported: true
         }
     },
     computed: {
@@ -299,7 +278,6 @@ export default {
                         this.lastFound = code.data;
                         this.qrInput = code.data;
                         this.player.log = "✅ QR-код розпізнано! Натисніть кнопку.";
-                        this.scannerExpanded = true;
                     } else {
                         alert("Код не знайдено.");
                     }
@@ -330,7 +308,6 @@ export default {
                 if (code && code.data && code.data.trim() !== '') {
                     this.lastFound = code.data;
                     this.qrInput = code.data;
-                    this.scannerExpanded = true;
                 }
                 this.isScanning = false;
             }
@@ -549,54 +526,45 @@ export default {
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
 
-.video-wrapper {
+.video-wrapper-static {
+    width: 240px;
+    height: 180px;
     background: #000;
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
-    cursor: pointer;
+    position: relative;
     border: 2px solid var(--glass-border);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.video-wrapper--minimized { width: var(--scanner-mini-width); height: var(--scanner-mini-height); }
-.video-wrapper--expanded { 
-    width: min(95%, var(--scanner-expanded-max-width)); 
-    aspect-ratio: 16/9;
-    border-radius: 24px;
-    position: fixed;
-    bottom: 120px;
-    right: 24px;
-    z-index: 1000;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+.video-wrapper-static video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.scanner-trigger-btn {
-    background: linear-gradient(135deg, #4ca528, #3a8a1f) !important;
-    border: none !important;
-    border-radius: 16px !important;
-    font-size: 16px !important;
-    letter-spacing: 1px;
-    box-shadow: 0 8px 24px rgba(76, 165, 40, 0.3) !important;
-    transition: all 0.3s ease;
-    text-shadow: none !important;
+.video-wrapper--ready {
+    border-color: var(--eme-green);
+    box-shadow: 0 0 15px rgba(76, 165, 40, 0.4);
 }
 
-.scanner-trigger-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(76, 165, 40, 0.5) !important;
+.scanner-frame-overlay {
+    position: absolute;
+    inset: 20%;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    pointer-events: none;
 }
 
-.animate-pulse {
-    animation: pulse-border 2s infinite;
-}
-
-@keyframes pulse-border {
-    0% { box-shadow: 0 0 0 0 rgba(76, 165, 40, 0.4); }
-    70% { box-shadow: 0 0 0 15px rgba(76, 165, 40, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(76, 165, 40, 0); }
+.btn-xs {
+    padding: 2px 8px;
+    font-size: 12px;
 }
 
 @media (max-width: 992px) {
+    .video-wrapper-static {
+        width: 160px;
+        height: 120px;
+    }
     .player-health { left: -60px; scale: 0.7; }
     .dragon-health { right: -20px; scale: 0.7; }
     .right_btns { right: 10px; padding: 10px; scale: 0.8; }
