@@ -96,6 +96,13 @@
       <!-- Scanner Area -->
       <div class="qr-section">
         <div class="qr-container-pure">
+          <!-- Prominent Trigger Button -->
+          <button v-if="!scannerExpanded" 
+                  class="btn btn-success w-100 mb-2 py-3 fw-bold scanner-trigger-btn animate-pulse" 
+                  @click="scannerExpanded = true">
+              🔍 ВІДКРИТИ СКАНЕР QR
+          </button>
+
           <!-- Summary card if expanded -->
           <div class="scanner-summary mb-2" v-if="scannerExpanded && !lastFound">
             <div class="scanner-summary__empty">Знайдіть QR-код у парку,<br>щоб отримати ресурси</div>
@@ -352,7 +359,7 @@ export default {
     --tool-size: 190px;
     --scanner-mini-width: 140px;
     --scanner-mini-height: 105px;
-    --scanner-expanded-max-width: 360px;
+    --scanner-expanded-max-width: 800px;
     --glass-dark: rgba(2, 8, 14, 0.72);
     --glass-border: rgba(255, 255, 255, 0.12);
     --eme-green: #4ca528;
@@ -552,28 +559,41 @@ export default {
 }
 
 .video-wrapper--minimized { width: var(--scanner-mini-width); height: var(--scanner-mini-height); }
-.video-wrapper--expanded { width: var(--scanner-expanded-max-width); aspect-ratio: 4/3; }
-.video-wrapper--ready { border-color: var(--eme-green); box-shadow: 0 0 20px var(--eme-green); }
-
-.video-wrapper video { width: 100%; height: 100%; object-fit: cover; }
-
-.scanner-frame {
-    position: absolute;
-    inset: 20%;
-    border: 2px solid white;
-    border-radius: 20px;
-    opacity: 0.5;
+.video-wrapper--expanded { 
+    width: min(95%, var(--scanner-expanded-max-width)); 
+    aspect-ratio: 16/9;
+    border-radius: 24px;
+    position: fixed;
+    bottom: 120px;
+    right: 24px;
+    z-index: 1000;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
 }
 
-.scanner-zoom-indicator {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(0,0,0,0.5);
-    padding: 4px 8px;
-    font-size: 10px;
-    border-radius: 4px;
-    font-weight: 800;
+.scanner-trigger-btn {
+    background: linear-gradient(135deg, #4ca528, #3a8a1f) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    font-size: 16px !important;
+    letter-spacing: 1px;
+    box-shadow: 0 8px 24px rgba(76, 165, 40, 0.3) !important;
+    transition: all 0.3s ease;
+    text-shadow: none !important;
+}
+
+.scanner-trigger-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(76, 165, 40, 0.5) !important;
+}
+
+.animate-pulse {
+    animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+    0% { box-shadow: 0 0 0 0 rgba(76, 165, 40, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(76, 165, 40, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 165, 40, 0); }
 }
 
 @media (max-width: 992px) {
