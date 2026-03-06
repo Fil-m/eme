@@ -199,7 +199,7 @@ export default {
         termuxCommand() {
             if (!this.absoluteUrl) return '';
             const dir = this.cloneName || 'eme';
-            return `pkg install -y python curl unzip git && mkdir -p ${dir} && cd ${dir} && curl -L "${this.absoluteUrl}" -o clone.zip && unzip -o clone.zip && rm clone.zip && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt && python manage.py migrate && bash start.sh`;
+            return `termux-setup-storage && pkg update -y && pkg install -y python curl unzip git libjpeg-turbo libpng && mkdir -p ${dir} && cd ${dir} && curl -L "${this.absoluteUrl}" -o clone.zip && unzip -q -o clone.zip && rm clone.zip && bash start.sh`;
         },
         qrUrl() {
             if (!this.termuxCommand) return '';

@@ -19,7 +19,7 @@ if [ ! -d "venv" ]; then
     pkg update -y && pkg upgrade -y
     
     echo "🛠 Встановлюємо залежності (Python, Unzip, Pillow libs)..."
-    pkg install python unzip libjpeg-turbo libpng -y
+    pkg install python curl unzip git libjpeg-turbo libpng -y
     
     echo "🌐 Створюємо venv..."
     python -m venv venv
@@ -29,14 +29,14 @@ if [ ! -d "venv" ]; then
     pip install --upgrade pip
     pip install -r requirements.txt
     
-    echo "🗄 Налаштовуємо базу даних..."
-    python manage.py migrate
-    python manage.py seed_nav
-    
-    echo "✅ Налаштування завершено!"
+    echo "✅ Початкове налаштування завершено!"
 else
     source venv/bin/activate
 fi
+
+echo "🗄 Перевірка та налаштування бази даних..."
+python manage.py migrate
+python manage.py seed_nav
 
 # 3. Запуск сервера
 echo "📱 EME OS запускається на http://127.0.0.1:8000"

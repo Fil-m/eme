@@ -195,15 +195,13 @@ class CloneCreateView(APIView):
 ## Included Modules
 {chr(10).join(f'- {m}' for m in all_modules)}
 
-## Setup Instructions (Termux / Linux)
+## Setup Instructions (Termux)
 ```bash
-pkg install -y python curl unzip git
+termux-setup-storage
+pkg update -y
+pkg install -y python curl unzip git libjpeg-turbo libpng
 unzip clone.zip -d eme && cd eme
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py shell -c "exec(open('seed_nav.py').read())"
-python manage.py runserver 0.0.0.0:8000
+bash start.sh
 ```
 
 ## Notes
