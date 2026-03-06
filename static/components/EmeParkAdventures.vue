@@ -96,39 +96,36 @@
       <!-- Scanner Area -->
       <div class="qr-section w-100 d-flex justify-content-center">
         <div class="qr-container-pure glass-card w-100" style="max-width: 600px;">
-          <!-- Manual Input -->
-          <div class="mb-2">
-             <input type="text" class="form-control form-control-sm" v-model="qrInput" placeholder="Введіть код вручну..." @keyup.enter="scanQR">
-          </div>
-
-          <!-- Video / Fallback -->
-          <div class="video-container-static" v-if="cameraSupported">
-               <div class="video-wrapper-static w-100" :class="{'video-wrapper--ready': lastFound}" style="height: 300px;">
+          
+          <!-- Video Container -->
+          <div class="video-container-static">
+               <div class="video-wrapper-static w-100" :class="{'video-wrapper--ready': lastFound}" style="height: 350px;">
                  <video ref="qrVideo" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: cover;"></video>
                  <canvas ref="qrCanvas" style="display: none;"></canvas>
                  <div class="scanner-frame-overlay"></div>
+                 
+                 <!-- Loading Overlay if not ready -->
+                 <div v-if="!isScanning && !lastFound" class="scanner-loading-overlay d-flex flex-column align-items-center justify-content-center">
+                    <div class="spinner-border text-primary mb-2" role="status"></div>
+                    <p class="small text-white">Ініціалізація камери...</p>
+                 </div>
                </div>
-          </div>
-          
-          <div v-else class="scanner-fallback-static p-3 text-center border-dashed">
-             <p class="small mb-2">📷 Камера заблокована</p>
-             <label class="btn btn-sm btn-success w-100 py-2">
-                <span>📂 Вибрати фото QR з галереї</span>
-                <input type="file" accept="image/*" capture="environment" @change="onFileScan" style="display: none;">
-             </label>
           </div>
 
           <!-- Status -->
-          <div id="qr-result" class="scanner-status-text mt-2 mb-2 text-center" v-if="lastFound">
-             <div class="fw-bold text-success">✅ Знайдено: {{ lastFound }}</div>
+          <div id="qr-result" class="scanner-status-text mt-3 mb-2 text-center" v-if="lastFound">
+             <div class="fw-bold text-success h5">✅ Знайдено: {{ lastFound }}</div>
           </div>
-          <div v-else class="scanner-status-text mt-2 mb-2 opacity-50 small text-center">
+          <div v-else class="scanner-status-text mt-3 mb-2 opacity-75 text-center">
              Наведіть камеру на QR-код ресурсу
           </div>
 
           <!-- Action -->
-          <div class="qr-actions">
-             <button id="send-qrcode" class="btn btn-primary w-100 py-2" @click="scanQR" :disabled="loading || (!lastFound && !qrInput)">Отримати ресурс!</button>
+          <div class="qr-actions mt-2">
+             <button id="send-qrcode" class="btn btn-primary w-100 py-3 fw-bold" @click="scanQR" :disabled="loading || !lastFound">
+                <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+                Отримати ресурс!
+             </button>
           </div>
         </div>
       </div>
@@ -150,7 +147,6 @@ export default {
                 elixir: 0, flash: 0, log: ''
             },
             battleMode: false,
-            qrInput: '',
             lastFound: '',
             loading: false,
             isScanning: false,
@@ -218,8 +214,8 @@ export default {
             }
         },
         async scanQR() {
-            if (!this.qrInput.trim() && !this.lastFound.trim()) return;
-            const codeToProcess = this.qrInput.trim() || this.lastFound.trim();
+            if (!this.lastFound.trim()) return;
+            const codeToProcess = this.lastFound.trim();
             this.loading = true;
             try {
                 const res = await fetch('/api/game/qr/', {
@@ -236,7 +232,6 @@ export default {
             } catch (e) {
                 console.error(e);
             } finally {
-                this.qrInput = '';
                 this.lastFound = '';
                 this.loading = false;
             }
@@ -261,35 +256,6 @@ export default {
                     console.error("Camera error:", err);
                     this.cameraSupported = false;
                 });
-        },
-        onFileScan(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = window.jsQR(imageData.data, canvas.width, canvas.height);
-                    
-                    if (code && code.data) {
-                        this.lastFound = code.data;
-                        this.qrInput = code.data;
-                        this.player.log = "✅ QR-код розпізнано! Натисніть кнопку.";
-                    } else {
-                        alert("Код не знайдено.");
-                    }
-                };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
         },
         processVideoFrame() {
             const video = this.$refs.qrVideo;
@@ -560,6 +526,13 @@ export default {
     border: 1px solid rgba(255,255,255,0.3);
     border-radius: 8px;
     pointer-events: none;
+}
+
+.scanner-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 5;
 }
 
 .btn-xs {

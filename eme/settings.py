@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'eme_kb',
     'eme_chat',
     'park_adventures',
+    'sslserver',
 ]
 
 MIDDLEWARE = [
@@ -130,3 +131,10 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = True
 
 MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
+
+# Security Settings for HTTPS
+if 'sslserver' in INSTALLED_APPS:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # SECURE_SSL_REDIRECT = False # Keep False for local dev to avoid infinite loops if not properly proxied

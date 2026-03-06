@@ -41,7 +41,18 @@ echo "🗄 Перевірка та налаштування бази даних.
 python manage.py migrate
 python manage.py seed_nav
 
-# 3. Запуск сервера
-echo "📱 EME OS запускається на http://127.0.0.1:8000"
-echo "Для завершення натисніть Ctrl+C"
-python manage.py runserver 0.0.0.0:8000
+# 3. Налаштування SSL та запуск сервера
+echo "🔐 Перевірка безпеки з'єднання..."
+python setup_ssl.py
+
+if [ -f "cert.pem" ] && [ -f "key.pem" ]; then
+    echo "🟢 Захищений режим (HTTPS) активовано."
+    LOCAL_IP=$(python -c 'import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(("8.8.8.8", 80)); print(s.getsockname()[0]); s.close()')
+    echo "🔗 Доступ за адресою: https://$LOCAL_IP:8000"
+    python manage.py runsslserver 0.0.0.0:8000 --certificate cert.pem --key key.pem
+else
+    echo "🔴 Помилка SSL: Сертифікати не знайдено."
+    echo "Просимо встановити mkcert (choco install mkcert / pkg install mkcert) для роботи камери."
+    echo "📱 Запуск у звичайному режимі (HTTP): http://$LOCAL_IP:8000"
+    python manage.py runserver 0.0.0.0:8000
+fi
