@@ -28,7 +28,7 @@ class MeshDiscovery:
         self.running = True
         threading.Thread(target=self._broadcast_presence, daemon=True).start()
         threading.Thread(target=self._listen_for_nodes, daemon=True).start()
-        print(f"📡 EME Mesh Discovery started on port {self.port}")
+        print(f"EME Mesh Discovery started on port {self.port}")
 
     def _broadcast_presence(self):
         """Sends UDP broadcast every 10 seconds."""
@@ -70,6 +70,7 @@ class MeshDiscovery:
     def _listen_for_nodes(self):
         """Listens for UDP broadcasts from other nodes."""
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             sock.bind(('', self.port))
         except Exception as e:
