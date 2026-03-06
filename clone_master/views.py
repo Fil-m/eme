@@ -199,7 +199,7 @@ class CloneCreateView(APIView):
 ```bash
 termux-setup-storage
 pkg update -y
-pkg install -y python curl unzip git libjpeg-turbo libpng
+pkg install -y python python-numpy curl unzip git libjpeg-turbo libpng ffmpeg libxml2 libxslt
 unzip clone.zip -d eme && cd eme
 bash start.sh
 ```

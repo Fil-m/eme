@@ -26,7 +26,11 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         room = serializer.save(creator=self.request.user)
         # Creator is automatically owner
-        RoomMember.objects.create(room=room, user=self.request.user, role=RoomMember.Role.OWNER)
+        member = RoomMember.objects.create(room=room, user=self.request.user, role=RoomMember.Role.OWNER)
+        
+        from network.discovery import discovery_service
+        discovery_service.broadcast_sync_event('chatroom', room.id)
+        discovery_service.broadcast_sync_event('roommember', member.sync_id)
 
     @action(detail=False, methods=['post'])
     def direct(self, request):
@@ -49,8 +53,13 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
             return Response(ChatRoomSerializer(existing, context={'request': request}).data)
 
         room = ChatRoom.objects.create(kind='dm', title='', creator=request.user)
-        RoomMember.objects.create(room=room, user=request.user, role=RoomMember.Role.OWNER)
-        RoomMember.objects.create(room=room, user=target, role=RoomMember.Role.MEMBER)
+        m1 = RoomMember.objects.create(room=room, user=request.user, role=RoomMember.Role.OWNER)
+        m2 = RoomMember.objects.create(room=room, user=target, role=RoomMember.Role.MEMBER)
+
+        from network.discovery import discovery_service
+        discovery_service.broadcast_sync_event('chatroom', room.id)
+        discovery_service.broadcast_sync_event('roommember', m1.sync_id)
+        discovery_service.broadcast_sync_event('roommember', m2.sync_id)
 
         return Response(ChatRoomSerializer(room, context={'request': request}).data, status=201)
 
@@ -77,6 +86,10 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         member, created = RoomMember.objects.get_or_create(
             room=room, user=user, defaults={'role': RoomMember.Role.MEMBER}
         )
+        if created:
+            from network.discovery import discovery_service
+            discovery_service.broadcast_sync_event('roommember', member.sync_id)
+            
         return Response(RoomMemberSerializer(member).data, status=201 if created else 200)
 
     @action(detail=True, methods=['post'], url_path='members/(?P<user_id>[^/.]+)/role')

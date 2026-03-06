@@ -28,10 +28,14 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        from network.discovery import discovery_service
+        col = serializer.save(user=self.request.user)
+        if discovery_service:
+            discovery_service.broadcast_sync_event('collection', str(col.sync_id))
 
     @action(detail=True, methods=['patch'], url_path='rename')
     def rename(self, request, pk=None):
+        from network.discovery import discovery_service
         collection = self.get_object()
         if collection.user != request.user:
             return Response({'error': 'Доступ заборонено'}, status=status.HTTP_403_FORBIDDEN)
@@ -40,6 +44,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Назва обов\'язкова'}, status=status.HTTP_400_BAD_REQUEST)
         collection.name = name
         collection.save(update_fields=['name'])
+        if discovery_service:
+            discovery_service.broadcast_sync_event('collection', str(collection.sync_id))
         return Response(CollectionSerializer(collection).data)
 
 
@@ -67,13 +73,11 @@ class MediaFileViewSet(viewsets.ModelViewSet):
 
                 if is_friend:
                     qs = MediaFile.objects.filter(
-                        models.Q(user_id=user_id, visibility__in=['friends', 'public']) |
-                        models.Q(user=user)
+                        user_id=user_id, visibility__in=['friends', 'public']
                     )
                 else:
                     qs = MediaFile.objects.filter(
-                        models.Q(user_id=user_id, visibility='public') |
-                        models.Q(user=user)
+                        user_id=user_id, visibility='public'
                     )
         else:
             qs = MediaFile.objects.filter(user=user)
@@ -93,6 +97,7 @@ class MediaFileViewSet(viewsets.ModelViewSet):
         return qs.distinct()
 
     def perform_create(self, serializer):
+        from network.discovery import discovery_service
         file_obj = self.request.FILES.get('file')
         if file_obj:
             max_size = getattr(django_settings, 'MAX_UPLOAD_SIZE', 100 * 1024 * 1024)
@@ -110,6 +115,8 @@ class MediaFileViewSet(viewsets.ModelViewSet):
             media_file = serializer.save(user=self.request.user)
 
         generate_preview(media_file)
+        if discovery_service:
+            discovery_service.broadcast_sync_event('mediafile', str(media_file.sync_id))
 
     @action(detail=True, methods=['get'])
     def download(self, request, pk=None):
@@ -152,6 +159,7 @@ class MediaFileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['patch'])
     def rename(self, request, pk=None):
+        from network.discovery import discovery_service
         media_file = self.get_object()
         if media_file.user != request.user:
             return Response({'error': 'Доступ заборонено'}, status=status.HTTP_403_FORBIDDEN)
@@ -160,10 +168,13 @@ class MediaFileViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Ім\'я обов\'язкове'}, status=status.HTTP_400_BAD_REQUEST)
         media_file.file_name = name
         media_file.save(update_fields=['file_name'])
+        if discovery_service:
+            discovery_service.broadcast_sync_event('mediafile', str(media_file.sync_id))
         return Response(MediaFileSerializer(media_file).data)
 
     @action(detail=True, methods=['patch'])
     def move(self, request, pk=None):
+        from network.discovery import discovery_service
         media_file = self.get_object()
         if media_file.user != request.user:
             return Response({'error': 'Доступ заборонено'}, status=status.HTTP_403_FORBIDDEN)
@@ -174,6 +185,8 @@ class MediaFileViewSet(viewsets.ModelViewSet):
         else:
             media_file.collection = None
         media_file.save(update_fields=['collection'])
+        if discovery_service:
+            discovery_service.broadcast_sync_event('mediafile', str(media_file.sync_id))
         return Response(MediaFileSerializer(media_file).data)
 
     @action(detail=True, methods=['post'])
@@ -194,6 +207,7 @@ class MediaFileViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='bulk-upload')
     def bulk_upload(self, request):
+        from network.discovery import discovery_service
         files = request.FILES.getlist('files')
         if not files:
             return Response({'error': 'Потрібні файли'}, status=status.HTTP_400_BAD_REQUEST)
@@ -216,6 +230,8 @@ class MediaFileViewSet(viewsets.ModelViewSet):
             )
             generate_preview(media_file)
             created.append(MediaFileSerializer(media_file).data)
+            if discovery_service:
+                discovery_service.broadcast_sync_event('mediafile', str(media_file.sync_id))
 
         return Response({'created': len(created), 'files': created}, status=status.HTTP_201_CREATED)
 

@@ -18,18 +18,21 @@ class HeartbeatView(APIView):
         user.last_seen = timezone.now()
         user.save(update_fields=['last_seen'])
 
-        node, created = Node.objects.get_or_create(
+        ip = request.META.get('REMOTE_ADDR', '')
+        node, created = Node.objects.update_or_create(
             user=user,
             defaults={
                 'name': f'{user.username}-node',
-                'device_id': str(uuid.uuid4()),
-                'ip_address': request.META.get('REMOTE_ADDR', ''),
+                'device_id': str(uuid.uuid4()) if not getattr(user, 'node', None) else user.node.device_id,
+                'ip_address': ip,
+                'is_active': True,
             }
         )
-        if not created:
-            node.is_active = True
-            node.ip_address = request.META.get('REMOTE_ADDR', '')
-            node.save(update_fields=['is_active', 'ip_address'])
+        
+        # Also register in discovery service known peers
+        from .discovery import discovery_service
+        if discovery_service and ip and ip != '127.0.0.1':
+            discovery_service.known_peers.add(ip)
 
         return Response({
             'status': 'ok',
@@ -153,9 +156,32 @@ class SyncPullView(APIView):
     """Download specific object data from this node for P2P sync."""
     permission_classes = [permissions.AllowAny] # Local mesh traffic
 
+    def _register_node(self, request):
+        """Helper to register/update node info from request IP."""
+        from network.models import Node
+        ip = request.META.get('REMOTE_ADDR')
+        if not ip or ip == '127.0.0.1':
+            return
+        
+        # Simple extraction of node name if provided in headers or params
+        node_name = request.query_params.get('node_name', 'Remote Node')
+        
+        Node.objects.update_or_create(
+            ip_address=ip,
+            user=request.user,
+            defaults={'name': node_name, 'is_active': True}
+        )
+        # Also let discovery service know
+        from network.discovery import discovery_service
+        if discovery_service:
+            discovery_service.known_peers.add(ip)
+
     def get(self, request):
+        self._register_node(request)
         from profiles.models import WallPost, WallComment, EMEUser
         from eme_chat.models import Message
+        from eme_media.models import Collection, MediaFile
+        from projects.models import Project, ProjectRole, ProjectMember, ProjectAction
         
         obj_type = request.query_params.get('type')
         sync_id = request.query_params.get('sync_id')
@@ -207,7 +233,112 @@ class SyncPullView(APIView):
                     'level': u.level,
                     'points': u.points,
                 }
-                
+        elif obj_type == 'collection':
+            col = Collection.objects.filter(sync_id=sync_id).first()
+            if col:
+                data = {
+                    'sync_id': str(col.sync_id),
+                    'user_username': col.user.username,
+                    'name': col.name,
+                    'description': col.description,
+                    'parent_sync_id': str(col.parent.sync_id) if col.parent else None,
+                    'created_at': col.created_at.isoformat()
+                }
+        elif obj_type == 'mediafile':
+            mf = MediaFile.objects.filter(sync_id=sync_id).first()
+            if mf:
+                data = {
+                    'sync_id': str(mf.sync_id),
+                    'user_username': mf.user.username,
+                    'collection_sync_id': str(mf.collection.sync_id) if mf.collection else None,
+                    'file_name': mf.file_name,
+                    'file_size': mf.file_size,
+                    'mime_type': mf.mime_type,
+                    'visibility': mf.visibility,
+                    'created_at': mf.created_at.isoformat(),
+                    'file_url': mf.file.url if mf.file else None,
+                }
+        elif obj_type == 'project':
+            proj = Project.objects.filter(sync_id=sync_id).first()
+            if proj:
+                data = {
+                    'sync_id': str(proj.sync_id),
+                    'owner_username': proj.owner.username,
+                    'title': proj.title,
+                    'description': proj.description,
+                    'emoji': proj.emoji,
+                    'domain': proj.domain,
+                    'status': proj.status,
+                    'priority': proj.priority,
+                    'deadline': proj.deadline.isoformat() if proj.deadline else None,
+                    'next_action': proj.next_action,
+                    'is_public': proj.is_public,
+                    'order': proj.order,
+                    'created_at': proj.created_at.isoformat(),
+                    'updated_at': proj.updated_at.isoformat()
+                }
+        elif obj_type == 'projectrole':
+            pr = ProjectRole.objects.filter(sync_id=sync_id).first()
+            if pr:
+                data = {
+                    'sync_id': str(pr.sync_id),
+                    'project_sync_id': str(pr.project.sync_id),
+                    'name': pr.name,
+                    'emoji': pr.emoji,
+                    'description': pr.description,
+                    'created_at': pr.created_at.isoformat()
+                }
+        elif obj_type == 'projectmember':
+            pm = ProjectMember.objects.filter(sync_id=sync_id).first()
+            if pm:
+                data = {
+                    'sync_id': str(pm.sync_id),
+                    'project_sync_id': str(pm.project.sync_id),
+                    'user_username': pm.user.username,
+                    'role_sync_id': str(pm.role.sync_id) if pm.role else None,
+                    'joined_at': pm.joined_at.isoformat()
+                }
+        elif obj_type == 'chatroom':
+            from eme_chat.models import ChatRoom
+            room = ChatRoom.objects.filter(id=sync_id).first()
+            if room:
+                data = {
+                    'id': str(room.id),
+                    'kind': room.kind,
+                    'title': room.title,
+                    'creator_username': room.creator.username if room.creator else None,
+                    'description': room.description,
+                    'created_at': room.created_at.isoformat()
+                }
+        elif obj_type == 'roommember':
+            from eme_chat.models import RoomMember
+            member = RoomMember.objects.filter(sync_id=sync_id).first()
+            if member:
+                data = {
+                    'sync_id': str(member.sync_id),
+                    'room_id': str(member.room.id),
+                    'user_username': member.user.username,
+                    'role': member.role,
+                    'joined_at': member.joined_at.isoformat()
+                }
+        elif obj_type == 'projectaction':
+            pa = ProjectAction.objects.filter(sync_id=sync_id).first()
+            if pa:
+                data = {
+                    'sync_id': str(pa.sync_id),
+                    'project_sync_id': str(pa.project.sync_id),
+                    'text': pa.text,
+                    'status': pa.status,
+                    'is_done': pa.is_done,
+                    'priority': pa.priority,
+                    'deadline': pa.deadline.isoformat() if pa.deadline else None,
+                    'due_date': pa.due_date.isoformat() if pa.due_date else None,
+                    'depends_on_sync_id': str(pa.depends_on.sync_id) if pa.depends_on else None,
+                    'assignee_sync_id': str(pa.assignee.sync_id) if pa.assignee else None,
+                    'assignee_role_sync_id': str(pa.assignee_role.sync_id) if pa.assignee_role else None,
+                    'created_at': pa.created_at.isoformat()
+                }
+
         if not data:
             return Response({"error": "Not found"}, status=404)
             
@@ -218,12 +349,29 @@ class SyncCatchupView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        # Auto-register node from IP
+        from network.models import Node
+        ip = request.META.get('REMOTE_ADDR')
+        if ip and ip != '127.0.0.1':
+            Node.objects.update_or_create(
+                ip_address=ip,
+                user=request.user,
+                defaults={'is_active': True}
+            )
+            from network.discovery import discovery_service
+            if discovery_service:
+                discovery_service.known_peers.add(ip)
+
         from profiles.models import WallPost, WallComment, EMEUser
         from eme_chat.models import Message
-        from datetime import datetime
+        from eme_media.models import Collection, MediaFile
+        from projects.models import Project, ProjectRole, ProjectMember, ProjectAction
+        from datetime import datetime, timezone
+        from django.utils import timezone as django_timezone
         
         since_ts = float(request.query_params.get('since', 0))
-        since_dt = datetime.fromtimestamp(since_ts)
+        # Use timezone.utc as the baseline for sync timestamps
+        since_dt = datetime.fromtimestamp(since_ts, tz=timezone.utc)
         items = []
         
         # Users
@@ -280,5 +428,133 @@ class SyncCatchupView(APIView):
                     'created_at': msg.created_at.isoformat()
                 }
             })
+
+        # ChatRooms
+        from eme_chat.models import ChatRoom, RoomMember
+        for room in ChatRoom.objects.filter(created_at__gt=since_dt):
+            items.append({
+                'type': 'chatroom',
+                'data': {
+                    'id': str(room.id),
+                    'kind': room.kind,
+                    'title': room.title,
+                    'creator_username': room.creator.username if room.creator else None,
+                    'description': room.description,
+                    'created_at': room.created_at.isoformat()
+                }
+            })
             
+        # RoomMembers
+        for member in RoomMember.objects.filter(joined_at__gt=since_dt):
+            items.append({
+                'type': 'roommember',
+                'data': {
+                    'sync_id': str(member.sync_id),
+                    'room_id': str(member.room.id),
+                    'user_username': member.user.username,
+                    'role': member.role,
+                    'joined_at': member.joined_at.isoformat()
+                }
+            })
+
+        # Collections
+        for col in Collection.objects.filter(created_at__gt=since_dt):
+            items.append({
+                'type': 'collection',
+                'data': {
+                    'sync_id': str(col.sync_id),
+                    'user_username': col.user.username,
+                    'name': col.name,
+                    'description': col.description,
+                    'parent_sync_id': str(col.parent.sync_id) if col.parent else None,
+                    'created_at': col.created_at.isoformat()
+                }
+            })
+
+        # MediaFiles
+        for mf in MediaFile.objects.filter(created_at__gt=since_dt):
+            items.append({
+                'type': 'mediafile',
+                'data': {
+                    'sync_id': str(mf.sync_id),
+                    'user_username': mf.user.username,
+                    'collection_sync_id': str(mf.collection.sync_id) if mf.collection else None,
+                    'file_name': mf.file_name,
+                    'file_size': mf.file_size,
+                    'mime_type': mf.mime_type,
+                    'visibility': mf.visibility,
+                    'created_at': mf.created_at.isoformat(),
+                    'file_url': mf.file.url if mf.file else None,
+                }
+            })
+
+        # Projects
+        for proj in Project.objects.filter(updated_at__gt=since_dt):
+            items.append({
+                'type': 'project',
+                'data': {
+                    'sync_id': str(proj.sync_id),
+                    'owner_username': proj.owner.username,
+                    'title': proj.title,
+                    'description': proj.description,
+                    'emoji': proj.emoji,
+                    'domain': proj.domain,
+                    'status': proj.status,
+                    'priority': proj.priority,
+                    'deadline': proj.deadline.isoformat() if proj.deadline else None,
+                    'next_action': proj.next_action,
+                    'is_public': proj.is_public,
+                    'order': proj.order,
+                    'created_at': proj.created_at.isoformat(),
+                    'updated_at': proj.updated_at.isoformat()
+                }
+            })
+
+        # ProjectRoles
+        for pr in ProjectRole.objects.filter(created_at__gt=since_dt):
+            items.append({
+                'type': 'projectrole',
+                'data': {
+                    'sync_id': str(pr.sync_id),
+                    'project_sync_id': str(pr.project.sync_id),
+                    'name': pr.name,
+                    'emoji': pr.emoji,
+                    'description': pr.description,
+                    'created_at': pr.created_at.isoformat()
+                }
+            })
+
+        # ProjectMembers
+        for pm in ProjectMember.objects.filter(joined_at__gt=since_dt):
+            items.append({
+                'type': 'projectmember',
+                'data': {
+                    'sync_id': str(pm.sync_id),
+                    'project_sync_id': str(pm.project.sync_id),
+                    'user_username': pm.user.username,
+                    'role_sync_id': str(pm.role.sync_id) if pm.role else None,
+                    'joined_at': pm.joined_at.isoformat()
+                }
+            })
+
+        # ProjectActions
+        for pa in ProjectAction.objects.filter(created_at__gt=since_dt):
+            items.append({
+                'type': 'projectaction',
+                'data': {
+                    'sync_id': str(pa.sync_id),
+                    'project_sync_id': str(pa.project.sync_id),
+                    'text': pa.text,
+                    'status': pa.status,
+                    'is_done': pa.is_done,
+                    'priority': pa.priority,
+                    'deadline': pa.deadline.isoformat() if pa.deadline else None,
+                    'due_date': pa.due_date.isoformat() if pa.due_date else None,
+                    'depends_on_sync_id': str(pa.depends_on.sync_id) if pa.depends_on else None,
+                    'assignee_sync_id': str(pa.assignee.sync_id) if pa.assignee else None,
+                    'assignee_role_sync_id': str(pa.assignee_role.sync_id) if pa.assignee_role else None,
+                    'created_at': pa.created_at.isoformat()
+                }
+            })
+
         return Response({"items": items})

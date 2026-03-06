@@ -24,7 +24,10 @@ class ProjectListCreateView(generics.ListCreateAPIView):
         return Project.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        from network.discovery import discovery_service
+        proj = serializer.save(owner=self.request.user)
+        if discovery_service:
+            discovery_service.broadcast_sync_event('project', str(proj.sync_id))
 
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -34,12 +37,19 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Project.objects.filter(owner=self.request.user)
 
+    def perform_update(self, serializer):
+        from network.discovery import discovery_service
+        proj = serializer.save()
+        if discovery_service:
+            discovery_service.broadcast_sync_event('project', str(proj.sync_id))
+
 
 class ProjectStatusUpdateView(APIView):
     """PATCH /api/projects/<pk>/status/ — drag-and-drop status change"""
     permission_classes = [permissions.IsAuthenticated]
 
     def patch(self, request, pk):
+        from network.discovery import discovery_service
         project = get_object_or_404(Project, pk=pk, owner=request.user)
         new_status = request.data.get('status')
         valid = [s[0] for s in Project.STATUS_CHOICES]
@@ -47,6 +57,8 @@ class ProjectStatusUpdateView(APIView):
             return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
         project.status = new_status
         project.save(update_fields=['status', 'updated_at'])
+        if discovery_service:
+            discovery_service.broadcast_sync_event('project', str(project.sync_id))
         return Response(ProjectSerializer(project).data)
 
 
@@ -63,7 +75,10 @@ class ActionListCreateView(generics.ListCreateAPIView):
         return self.get_project().actions.select_related('depends_on', 'assignee__user', 'assignee__role').all()
 
     def perform_create(self, serializer):
-        serializer.save(project=self.get_project())
+        from network.discovery import discovery_service
+        action = serializer.save(project=self.get_project())
+        if discovery_service:
+            discovery_service.broadcast_sync_event('projectaction', str(action.sync_id))
 
 
 class ActionUpdateView(generics.RetrieveUpdateDestroyAPIView):
@@ -73,12 +88,19 @@ class ActionUpdateView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return ProjectAction.objects.filter(project__owner=self.request.user)
 
+    def perform_update(self, serializer):
+        from network.discovery import discovery_service
+        action = serializer.save()
+        if discovery_service:
+            discovery_service.broadcast_sync_event('projectaction', str(action.sync_id))
+
 
 class ActionStatusUpdateView(APIView):
     """PATCH /api/projects/actions/<pk>/status/ — drag-and-drop between action columns"""
     permission_classes = [permissions.IsAuthenticated]
 
     def patch(self, request, pk):
+        from network.discovery import discovery_service
         action = get_object_or_404(ProjectAction, pk=pk, project__owner=request.user)
         new_status = request.data.get('status')
         valid = [s[0] for s in ProjectAction.ACTION_STATUS]
@@ -94,6 +116,8 @@ class ActionStatusUpdateView(APIView):
 
         action.status = new_status
         action.save()  # save() syncs is_done
+        if discovery_service:
+            discovery_service.broadcast_sync_event('projectaction', str(action.sync_id))
         return Response(ProjectActionSerializer(action).data)
 
 
@@ -111,7 +135,10 @@ class RoleListCreateView(generics.ListCreateAPIView):
         return self.get_project().roles.all()
 
     def perform_create(self, serializer):
-        serializer.save(project=self.get_project())
+        from network.discovery import discovery_service
+        role = serializer.save(project=self.get_project())
+        if discovery_service:
+            discovery_service.broadcast_sync_event('projectrole', str(role.sync_id))
 
 
 class RoleDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -121,6 +148,12 @@ class RoleDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return ProjectRole.objects.filter(project__owner=self.request.user)
+
+    def perform_update(self, serializer):
+        from network.discovery import discovery_service
+        role = serializer.save()
+        if discovery_service:
+            discovery_service.broadcast_sync_event('projectrole', str(role.sync_id))
 
 
 # ── Members ───────────────────────────────────────────────────────────────────
@@ -137,7 +170,10 @@ class MemberListCreateView(generics.ListCreateAPIView):
         return self.get_project().members.select_related('user', 'role').all()
 
     def perform_create(self, serializer):
-        serializer.save(project=self.get_project())
+        from network.discovery import discovery_service
+        member = serializer.save(project=self.get_project())
+        if discovery_service:
+            discovery_service.broadcast_sync_event('projectmember', str(member.sync_id))
 
 
 class MemberDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -149,6 +185,7 @@ class MemberDetailView(generics.RetrieveUpdateDestroyAPIView):
         return ProjectMember.objects.filter(project__owner=self.request.user)
 
     def perform_update(self, serializer):
+        from network.discovery import discovery_service
         old_role_id = self.get_object().role_id
         member = serializer.save()
         new_role_id = member.role_id
@@ -162,6 +199,9 @@ class MemberDetailView(generics.RetrieveUpdateDestroyAPIView):
                 assignee__isnull=True,
             )
             unassigned_role_actions.update(assignee=member)
+
+        if discovery_service:
+            discovery_service.broadcast_sync_event('projectmember', str(member.sync_id))
 
 
 # ── Public ────────────────────────────────────────────────────────────────────

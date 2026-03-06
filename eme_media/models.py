@@ -4,6 +4,7 @@ import uuid
 
 
 class Collection(models.Model):
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='collections')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='')
@@ -26,6 +27,7 @@ class Tag(models.Model):
 
 
 class MediaFile(models.Model):
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     class Visibility(models.TextChoices):
         PRIVATE = 'private', 'Приватний'
         FRIENDS = 'friends', 'Для друзів'

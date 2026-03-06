@@ -41,6 +41,7 @@ class RoomMember(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='room_memberships'
     )
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.MEMBER)
     is_muted = models.BooleanField(default=False)
     joined_at = models.DateTimeField(auto_now_add=True)
@@ -104,6 +105,7 @@ class Message(models.Model):
         'eme_media.MediaFile', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='chat_messages'
     )
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

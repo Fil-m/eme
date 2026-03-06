@@ -7,10 +7,16 @@ from eme_chat.models import ChatRoom
 
 GENERAL_ROOM_TITLE = "🌐 Загальний EME"
 
+# Fixed UUID for General room to be consistent across all mesh nodes
+GENERAL_ROOM_ID = "00000000-0000-0000-0000-000000000001"
+
 room, created = ChatRoom.objects.get_or_create(
-    kind='general',
-    title=GENERAL_ROOM_TITLE,
-    defaults={'description': 'Загальний чат для всіх учасників мережі EME.'}
+    id=GENERAL_ROOM_ID,
+    defaults={
+        'kind': 'general',
+        'title': GENERAL_ROOM_TITLE,
+        'description': 'Загальний чат для всіх учасників мережі EME.'
+    }
 )
 
 if created:

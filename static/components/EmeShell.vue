@@ -1,20 +1,28 @@
 <template>
     <div class="eme-shell">
-        <!-- COLUMN 1: NAV STRIP -->
+        <!-- COLUMN 1: NAV STRIP (GLASS) -->
         <div class="eme-nav-col">
             <nav class="eme-nav">
-                <div class="eme-nav-logo">E</div>
+                <div class="eme-nav-logo">
+                    <div class="logo-inner">E</div>
+                </div>
 
-                <button v-for="item in navItems" :key="item.item_id" class="eme-nav-btn"
-                    :class="{active: activeApp === item.item_id}" :title="item.label"
-                    @click="openApp(item.item_id)">
-                    <span class="nav-icon">{{ item.icon }}</span>
-                    <span class="nav-label">{{ item.label }}</span>
-                </button>
+                <div class="nav-groups-wrapper">
+                    <div v-for="group in structuredNav" :key="group.item_id" class="nav-group">
+                        <div class="nav-group-title">{{ group.label }}</div>
+                        
+                        <button v-for="item in group.children" :key="item.item_id" class="eme-nav-btn"
+                            :class="{active: activeApp === item.item_id}" :title="item.label"
+                            @click="openApp(item.item_id)">
+                            <div class="btn-indicator"></div>
+                            <span class="nav-icon">{{ item.icon }}</span>
+                            <span class="nav-label">{{ item.label }}</span>
+                        </button>
+                    </div>
+                </div>
 
-                <div class="mt-auto pb-3">
-                    <button class="eme-nav-btn" title="Вийти" @click="$emit('logout')"
-                        style="border-top: 1px solid var(--tblr-border-color); padding-top: 15px;">
+                <div class="mt-auto pb-4">
+                    <button class="eme-nav-btn logout-btn" title="Вийти" @click="$emit('logout')">
                         <span class="nav-icon">🚪</span>
                         <span class="nav-label">Вийти</span>
                     </button>
@@ -23,15 +31,22 @@
         </div>
 
         <!-- COLUMN 3: MAIN CONTENT AREA -->
-        <div class="eme-main-col" :class="{'p-0': activeApp === 'kb' || activeApp === 'projects' || activeApp === 'chat' || activeApp === 'clone_master'}">
+        <div class="eme-main-col" :class="{'no-padding': isFullscreenApp}">
             <!-- Empty desktop -->
-            <div v-if="!activeApp" class="eme-empty">
-                <div class="big-logo">EME</div>
-                <p class="mt-3 text-muted">Оберіть розділ у навігації ліворуч</p>
-            </div>
+            <transition name="fade">
+                <div v-if="!activeApp" class="eme-empty">
+                    <div class="big-logo">EME</div>
+                    <p class="mt-3 text-muted">Оберіть розділ у навігації</p>
+                    <div class="status-dot"></div>
+                </div>
+            </transition>
 
-            <!-- Dynamic Content Slot / Components -->
-            <slot></slot>
+            <!-- Dynamic Content Slot -->
+            <transition name="page" mode="out-in">
+                <div :key="activeApp || 'empty'" class="page-wrapper">
+                    <slot></slot>
+                </div>
+            </transition>
         </div>
     </div>
 </template>
@@ -39,6 +54,20 @@
 <script>
 export default {
     props: ['navItems', 'activeApp'],
+    computed: {
+        isFullscreenApp() {
+            const full = ['kb', 'projects', 'chat', 'clone_master', 'park_adventures'];
+            return full.includes(this.activeApp);
+        },
+        structuredNav() {
+            // Use the hierarchical structure provided by the backend (NavItemSerializer.children)
+            // We filter for root items (parent === null) and let the template render their children
+            if (!Array.isArray(this.navItems)) return [];
+            return this.navItems
+                .filter(i => i.parent === null)
+                .sort((a, b) => a.order - b.order);
+        }
+    },
     methods: {
         openApp(appId) {
             this.$emit('update:activeApp', appId);
@@ -50,172 +79,266 @@ export default {
 <style scoped>
 .eme-shell {
     display: grid;
-    grid-template-columns: 72px 1fr;
+    grid-template-columns: 90px 1fr;
     height: 100vh;
+    background: #0d0e1a;
+    color: #e1e1e1;
     overflow: hidden;
-    box-sizing: border-box;
 }
 
 .eme-nav-col {
-    background: var(--tblr-dark, #1a1c2e);
+    position: relative;
+    z-index: 1000;
 }
 
 .eme-nav {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 14px 0 12px;
-    gap: 2px;
-    width: 72px;
-    border-right: 1px solid var(--tblr-border-color);
-    min-height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    background: var(--tblr-navbar-bg, #1a1c2e);
-    z-index: 100;
+    padding: 20px 0;
+    width: 90px;
+    height: 100vh;
+    background: rgba(26, 28, 46, 0.4);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.eme-nav::-webkit-scrollbar {
+    width: 0px;
 }
 
 .eme-nav-logo {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    padding: 2px;
     background: var(--eme-grad);
-    color: white;
-    font-weight: 900;
-    font-size: 1.2rem;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 14px;
+    margin-bottom: 24px;
     flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
 }
 
-.eme-nav-btn {
+.logo-inner {
+    width: 100%;
+    height: 100%;
+    background: #0d0e1a;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: white;
+    font-size: 1.4rem;
+}
+
+.nav-groups-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.nav-group {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    width: 56px;
-    padding: 9px 4px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    cursor: pointer;
-    font-family: inherit;
-    color: var(--tblr-secondary);
-    transition: .16s;
-    margin-bottom: 2px;
+    width: 100%;
 }
 
-.eme-nav-btn .nav-icon {
-    font-size: 1.3rem;
-    line-height: 1;
-}
-
-.eme-nav-btn .nav-label {
-    font-size: 7px;
-    font-weight: 600;
-    letter-spacing: .3px;
+.nav-group-title {
+    font-size: 9px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+    width: 100%;
     text-align: center;
-    line-height: 1.4;
+}
+
+.eme-nav-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 4px;
+    outline: none;
+}
+
+.btn-indicator {
+    position: absolute;
+    left: -12px;
+    width: 4px;
+    height: 0;
+    background: var(--eme-accent);
+    border-radius: 0 4px 4px 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px var(--eme-accent);
 }
 
 .eme-nav-btn:hover {
-    background: rgba(255, 255, 255, .06);
+    background: rgba(255, 255, 255, 0.05);
     color: white;
 }
 
 .eme-nav-btn.active {
-    background: rgba(0, 229, 255, .1);
+    background: rgba(0, 229, 255, 0.1);
     color: var(--eme-accent);
-    border-color: rgba(0, 229, 255, .2);
+}
+
+.eme-nav-btn.active .btn-indicator {
+    height: 24px;
+    left: 0;
+}
+
+.nav-icon {
+    font-size: 1.4rem;
+    margin-bottom: 2px;
+}
+
+.nav-label {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+.logout-btn {
+    opacity: 0.6;
+}
+
+.logout-btn:hover {
+    color: #ff4b4b;
+    background: rgba(255, 75, 75, 0.1);
 }
 
 .eme-main-col {
-    padding: 24px;
-    height: 100vh;
-    overflow-y: auto !important;
-    overflow-x: hidden;
-    box-sizing: border-box;
+    position: relative;
+    padding: 30px;
+    overflow-y: auto;
+    background: radial-gradient(circle at top right, rgba(108, 0, 255, 0.05), transparent 400px),
+                radial-gradient(circle at bottom left, rgba(0, 229, 255, 0.03), transparent 400px);
 }
 
-/* MOBILE OPTIMIZATIONS */
-@media (max-width: 768px) {
-    .eme-shell {
-        grid-template-columns: 1fr;
-        padding-bottom: 70px; /* Space for fixed nav */
-    }
-
-    .eme-nav {
-        width: 100%;
-        height: 60px;
-        min-height: auto;
-        flex-direction: row;
-        bottom: 0;
-        top: auto;
-        left: 0;
-        right: 0;
-        border-right: none;
-        border-top: 1px solid var(--tblr-border-color);
-        justify-content: space-around;
-        padding: 0 10px;
-        background: rgba(26, 28, 46, 0.95);
-        backdrop-filter: blur(10px);
-    }
-
-    .eme-nav-logo {
-        display: none; /* Hide logo on mobile nav strip */
-    }
-
-    .eme-nav-btn {
-        width: auto;
-        flex: 1;
-        padding: 5px;
-        margin-bottom: 0;
-    }
-
-    .eme-nav-btn .nav-icon {
-        font-size: 1.5rem;
-    }
-
-    .eme-nav-btn .nav-label {
-        display: none; /* Icons only on mobile */
-    }
-
-    .eme-main-col {
-        padding: 12px;
-    }
-
-    .mt-auto {
-        margin-top: 0 !important;
-        padding-bottom: 0 !important;
-    }
-
-    .eme-nav-btn[title="Вийти"] {
-        border-top: none !important;
-        padding-top: 5px !important;
-    }
+.eme-main-col.no-padding {
+    padding: 0;
 }
 
+.page-wrapper {
+    width: 100%;
+    height: 100%;
+}
+
+/* Transitions */
+.page-enter-active, .page-leave-active {
+    transition: all 0.4s ease;
+}
+.page-enter-from {
+    opacity: 0;
+    transform: translateY(10px);
+}
+.page-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.5s ease;
+}
+.fade-enter-from, .fade-leave-to {
+    opacity: 0;
+}
+
+/* Empty State */
 .eme-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 60vh;
-    color: var(--tblr-secondary);
+    height: 80vh;
 }
 
-.eme-empty .big-logo {
-    font-size: 7rem;
-    font-weight: 900;
-    opacity: .06;
-    letter-spacing: -8px;
-    user-select: none;
-    background: var(--eme-grad);
+.big-logo {
+    font-size: 8rem;
+    font-weight: 950;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    letter-spacing: -8px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #00ff88;
+    border-radius: 50%;
+    margin-top: 20px;
+    box-shadow: 0 0 15px #00ff88;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .eme-shell {
+        grid-template-columns: 1fr;
+    }
+    .eme-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 5px 10px;
+        border-right: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 2000;
+        background: rgba(26, 28, 46, 0.95);
+        overflow: visible;
+    }
+    .nav-groups-wrapper {
+        flex-direction: row;
+        gap: 0;
+        justify-content: space-around;
+    }
+    .nav-group-title, .eme-nav-logo, .nav-label, .btn-indicator {
+        display: none;
+    }
+    .eme-nav-btn {
+        width: 50px;
+        height: 50px;
+        margin-bottom: 0;
+    }
+    .eme-main-col {
+        padding: 15px;
+        padding-bottom: 90px;
+    }
+    .mt-auto {
+        margin-top: 0 !important;
+    }
 }
 </style>

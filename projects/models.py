@@ -1,5 +1,6 @@
 from django.db import models
 from profiles.models import EMEUser
+import uuid
 
 
 PRIORITY_CHOICES = [
@@ -11,6 +12,7 @@ PRIORITY_CHOICES = [
 
 
 class Project(models.Model):
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     STATUS_CHOICES = [
         ('backlog', 'Backlog'),
         ('this_week', 'Цього тижня'),
@@ -26,7 +28,7 @@ class Project(models.Model):
         ('community', '🤝 Спільнота'),
     ]
 
-    owner = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='projects')
+    owner = models.ForeignKey('profiles.EMEUser', on_delete=models.CASCADE, related_name='projects')
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     emoji = models.CharField(max_length=10, default='📋')
@@ -49,6 +51,7 @@ class Project(models.Model):
 
 class ProjectRole(models.Model):
     """Custom role within a project — e.g. 'Шашличник', 'Координатор'"""
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='roles')
     name = models.CharField(max_length=100)
     emoji = models.CharField(max_length=10, default='👤')
@@ -65,8 +68,9 @@ class ProjectRole(models.Model):
 
 class ProjectMember(models.Model):
     """User assigned to a project with a specific role"""
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='members')
-    user = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='project_memberships')
+    user = models.ForeignKey('profiles.EMEUser', on_delete=models.CASCADE, related_name='project_memberships')
     role = models.ForeignKey(ProjectRole, on_delete=models.SET_NULL, null=True, blank=True, related_name='members')
     joined_at = models.DateTimeField(auto_now_add=True)
 
@@ -81,6 +85,7 @@ class ProjectMember(models.Model):
 
 class ProjectAction(models.Model):
     """Action item / task within a project — has its own Kanban status"""
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     ACTION_STATUS = [
         ('todo', '📋 Задача'),
         ('doing', '🔧 Виконується'),

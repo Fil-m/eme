@@ -18,15 +18,18 @@ if [ ! -d "venv" ]; then
     echo "📦 Оновлюємо системні пакети..."
     pkg update -y && pkg upgrade -y
     
-    echo "🛠 Встановлюємо залежності (Python, Unzip, Pillow libs)..."
-    pkg install python curl unzip git libjpeg-turbo libpng -y
+    echo "🛠 Встановлюємо системні залежності (Media, XML, FFmpeg)..."
+    pkg install python python-numpy curl unzip git libjpeg-turbo libpng ffmpeg libxml2 libxslt -y
     
-    echo "🌐 Створюємо venv..."
-    python -m venv venv
+    echo "🌐 Створюємо venv з доступом до системних пакетів (для швидкості)..."
+    python -m venv venv --system-site-packages
     source venv/bin/activate
     
-    echo "pip: Встановлюємо Python залежності..."
+    echo "pip: Оновлюємо pip..."
     pip install --upgrade pip
+    
+    echo "pip: Встановлюємо Python залежності..."
+    # Numpy вже встановлено системно, pip його пропустить або оновить швидко
     pip install -r requirements.txt
     
     echo "✅ Початкове налаштування завершено!"
