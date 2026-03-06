@@ -255,6 +255,7 @@ export default {
             } catch (e) { }
         },
         getChatPartner(room) {
+            if (!room || !room.participants) return {};
             return room.participants.find(p => p.id !== this.user.id) || {};
         },
         scrollToBottom() {

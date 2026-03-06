@@ -33,11 +33,12 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     my_role = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
+    participants = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatRoom
         fields = ['id', 'kind', 'title', 'description', 'avatar_url', 'creator',
-                  'members_count', 'last_message', 'my_role', 'unread_count', 'created_at', 'updated_at']
+                  'members_count', 'last_message', 'my_role', 'unread_count', 'created_at', 'updated_at', 'participants']
         read_only_fields = ['id', 'creator', 'created_at', 'updated_at',
                             'members_count', 'last_message', 'my_role', 'avatar_url', 'unread_count']
 
@@ -69,6 +70,11 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     def get_unread_count(self, obj):
         # Simple: return 0 for now; can be enhanced with read tracking
         return 0
+
+    def get_participants(self, obj):
+        # Return basic info about members for the frontend
+        users = [m.user for m in obj.members.all()]
+        return MiniUserSerializer(users, many=True).data
 
 
 class StickerSerializer(serializers.ModelSerializer):
