@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import uuid
 
 class EMEUser(AbstractUser):
     bio = models.TextField(blank=True, null=True)
@@ -48,6 +49,7 @@ class FollowRelation(models.Model):
 
 
 class WallPost(models.Model):
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     owner = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='wall_posts')
     author = models.ForeignKey(EMEUser, on_delete=models.CASCADE, related_name='written_posts')
     content = models.TextField()
@@ -62,6 +64,7 @@ class WallPost(models.Model):
 
 
 class WallComment(models.Model):
+    sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     post = models.ForeignKey(WallPost, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(EMEUser, on_delete=models.CASCADE)
     content = models.TextField()

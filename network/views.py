@@ -150,49 +150,110 @@ class MessageViewSet(viewsets.ModelViewSet):
 
 
 class SyncPullView(APIView):
-    """Download data from this node for P2P sync."""
-    permission_classes = [permissions.IsAuthenticated]
+    """Download specific object data from this node for P2P sync."""
+    permission_classes = [permissions.AllowAny] # Local mesh traffic
 
     def get(self, request):
-        from profiles.models import EMEUser
-        from profiles.serializers import EMEUserSerializer
+        from profiles.models import WallPost, WallComment
+        from eme_chat.models import Message
+        
+        obj_type = request.query_params.get('type')
+        sync_id = request.query_params.get('sync_id')
+        
+        if not obj_type or not sync_id:
+            return Response({"error": "Missing params"}, status=400)
+            
+        data = {}
+        if obj_type == 'wallpost':
+            post = WallPost.objects.filter(sync_id=sync_id).first()
+            if post:
+                data = {
+                    'sync_id': str(post.sync_id),
+                    'owner_username': post.owner.username,
+                    'author_username': post.author.username,
+                    'content': post.content,
+                    'created_at': post.created_at.isoformat(),
+                    'likes_count': post.likes_count
+                }
+        elif obj_type == 'wallcomment':
+            comment = WallComment.objects.filter(sync_id=sync_id).first()
+            if comment:
+                data = {
+                    'sync_id': str(comment.sync_id),
+                    'post_sync_id': str(comment.post.sync_id),
+                    'author_username': comment.author.username,
+                    'content': comment.content,
+                    'created_at': comment.created_at.isoformat()
+                }
+        elif obj_type == 'chatmessage':
+            msg = Message.objects.filter(id=sync_id).first()
+            if msg:
+                data = {
+                    'id': str(msg.id),
+                    'room_id': str(msg.room.id),
+                    'sender_username': msg.sender.username,
+                    'text': msg.text,
+                    'is_read': msg.is_read,
+                    'created_at': msg.created_at.isoformat()
+                }
+                
+        if not data:
+            return Response({"error": "Not found"}, status=404)
+            
+        return Response(data)
 
-        users = EMEUser.objects.all()
-        nodes = Node.objects.all()
+class SyncCatchupView(APIView):
+    """Download all missed objects since a specific timestamp."""
+    permission_classes = [permissions.AllowAny]
 
-        return Response({
-            'users': EMEUserSerializer(users, many=True, context={'request': request}).data,
-            'nodes': NodeSerializer(nodes, many=True).data,
-            'server_time': str(timezone.now()),
-        })
-
-
-class SyncPushView(APIView):
-    """Accept data from another node for P2P sync."""
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        # MVP: just log what was received
-        data = request.data
-        messages_data = data.get('messages', [])
-        created_messages = 0
-
-        for m_data in messages_data:
-            msg_id = m_data.get('id')
-            if msg_id and not Message.objects.filter(id=msg_id).exists():
-                try:
-                    room = ChatRoom.objects.get(id=m_data.get('room'))
-                    Message.objects.create(
-                        id=msg_id,
-                        room=room,
-                        sender_id=m_data.get('sender'),
-                        text=m_data.get('text', ''),
-                    )
-                    created_messages += 1
-                except (ChatRoom.DoesNotExist, Exception):
-                    pass
-
-        return Response({
-            'status': 'ok',
-            'messages_created': created_messages,
-        })
+    def get(self, request):
+        from profiles.models import WallPost, WallComment
+        from eme_chat.models import Message
+        from datetime import datetime
+        
+        since_ts = float(request.query_params.get('since', 0))
+        since_dt = datetime.fromtimestamp(since_ts)
+        items = []
+        
+        # WallPosts
+        for post in WallPost.objects.filter(created_at__gt=since_dt):
+            items.append({
+                'type': 'wallpost',
+                'data': {
+                    'sync_id': str(post.sync_id),
+                    'owner_username': post.owner.username,
+                    'author_username': post.author.username,
+                    'content': post.content,
+                    'created_at': post.created_at.isoformat(),
+                    'likes_count': post.likes_count
+                }
+            })
+            
+        # WallComments
+        for comment in WallComment.objects.filter(created_at__gt=since_dt):
+            items.append({
+                'type': 'wallcomment',
+                'data': {
+                    'sync_id': str(comment.sync_id),
+                    'post_sync_id': str(comment.post.sync_id),
+                    'author_username': comment.author.username,
+                    'content': comment.content,
+                    'created_at': comment.created_at.isoformat()
+                }
+            })
+            
+        # Messages
+        for msg in Message.objects.filter(created_at__gt=since_dt):
+            items.append({
+                'type': 'chatmessage',
+                'data': {
+                    'id': str(msg.id),
+                    'room_id': str(msg.room.id),
+                    'sender_username': msg.sender.username,
+                    'text': msg.text,
+                    'is_read': msg.is_read,
+                    'created_at': msg.created_at.isoformat()
+                }
+            })
+            
+        return Response({"items": items})

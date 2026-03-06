@@ -126,7 +126,10 @@ class MessageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         room_id = self.kwargs.get('room_pk')
         room = ChatRoom.objects.get(id=room_id)
-        serializer.save(sender=self.request.user, room=room)
+        instance = serializer.save(sender=self.request.user, room=room)
+        
+        from network.discovery import discovery_service
+        discovery_service.broadcast_sync_event('chatmessage', instance.id)
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()

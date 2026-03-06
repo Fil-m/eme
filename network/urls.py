@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     HeartbeatView, MeshDiscoveryView, DirectMessageView,
-    ChatRoomViewSet, MessageViewSet, SyncPullView, SyncPushView,
+    ChatRoomViewSet, MessageViewSet, SyncPullView, SyncCatchupView,
 )
 
 router = DefaultRouter()
@@ -14,6 +14,6 @@ urlpatterns = [
     path('discovery/', MeshDiscoveryView.as_view(), name='mesh-discovery'),
     path('dm/', DirectMessageView.as_view(), name='direct-message'),
     path('sync/pull/', SyncPullView.as_view(), name='sync-pull'),
-    path('sync/push/', SyncPushView.as_view(), name='sync-push'),
+    path('sync/catchup/', SyncCatchupView.as_view(), name='sync-catchup'),
     path('', include(router.urls)),
 ]

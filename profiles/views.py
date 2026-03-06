@@ -163,9 +163,12 @@ class WallPostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         owner_id = self.request.data.get('owner')
         if owner_id:
-            serializer.save(author=self.request.user, owner_id=owner_id)
+            instance = serializer.save(author=self.request.user, owner_id=owner_id)
         else:
-            serializer.save(author=self.request.user, owner=self.request.user)
+            instance = serializer.save(author=self.request.user, owner=self.request.user)
+            
+        from network.discovery import discovery_service
+        discovery_service.broadcast_sync_event('wallpost', instance.sync_id)
 
 
 class WallCommentViewSet(viewsets.ModelViewSet):
@@ -174,4 +177,6 @@ class WallCommentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        instance = serializer.save(author=self.request.user)
+        from network.discovery import discovery_service
+        discovery_service.broadcast_sync_event('wallcomment', instance.sync_id)
