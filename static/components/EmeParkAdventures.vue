@@ -574,7 +574,7 @@ export default {
 .btn_container.btn_health.player-health {
     position: absolute;
     top: -6px;
-    left: -14px;
+    left: -112px;
     width: var(--player-health-size);
     height: var(--player-health-size);
     margin-top: 0;
@@ -673,7 +673,7 @@ input[type="checkbox"] {
 .park-adventures-wrapper.fight_view .right_btns {
     position: absolute;
     top: 72px;
-    right: clamp(20px, 4vw, 44px);
+    right: -34px;
     width: 96px;
     display: flex;
     flex-direction: column;
@@ -696,6 +696,7 @@ input[type="checkbox"] {
     height: 96px;
     padding: 4px;
     background-size: contain;
+    background-position: right center;
 }
 
 .right_btns .btn_container p {
@@ -1023,7 +1024,7 @@ input[type="checkbox"] {
 
     .btn_container.btn_health.player-health {
         top: -4px;
-        left: -10px;
+        left: -68px;
         margin-top: 0;
     }
 
@@ -1042,7 +1043,7 @@ input[type="checkbox"] {
 
     .park-adventures-wrapper.fight_view .right_btns {
         top: 60px;
-        right: 12px;
+        right: -24px;
         width: 96px;
         gap: 10px;
     }
