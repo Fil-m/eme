@@ -99,15 +99,27 @@
           
           <!-- Video Container -->
           <div class="video-container-static">
-               <div class="video-wrapper-static w-100" :class="{'video-wrapper--ready': lastFound}" style="height: 350px;">
+               <div class="video-wrapper-static w-100" :class="{'video-wrapper--ready': lastFound, 'video-wrapper--error': cameraError}" style="height: 350px;">
                  <video ref="qrVideo" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: cover;"></video>
                  <canvas ref="qrCanvas" style="display: none;"></canvas>
                  <div class="scanner-frame-overlay"></div>
                  
                  <!-- Loading Overlay if not ready -->
-                 <div v-if="!isScanning && !lastFound" class="scanner-loading-overlay d-flex flex-column align-items-center justify-content-center">
-                    <div class="spinner-border text-primary mb-2" role="status"></div>
-                    <p class="small text-white">Ініціалізація камери...</p>
+                 <div v-if="!cameraActive && !lastFound && !cameraError" class="scanner-loading-overlay d-flex flex-column align-items-center justify-content-center">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="small text-white mb-2">Ініціалізація камери...</p>
+                    <button class="btn btn-xs btn-outline-light opacity-50" @click="startCamera">Перезавантажити камеру</button>
+                 </div>
+
+                 <!-- Error Overlay -->
+                 <div v-if="cameraError" class="scanner-error-overlay p-4 d-flex flex-column align-items-center justify-content-center text-center">
+                    <div class="mb-3" style="font-size: 40px;">⚠️</div>
+                    <div class="h6 text-danger mb-2">Помилка камери</div>
+                    <div class="small text-white opacity-75 mb-3">{{ cameraError }}</div>
+                    <div class="d-flex gap-2">
+                       <button class="btn btn-sm btn-outline-light" @click="startCamera">Спробувати знову</button>
+                       <a v-if="!isSecure" :href="httpsUrl" class="btn btn-sm btn-warning">HTTPS версія</a>
+                    </div>
                  </div>
                </div>
           </div>
@@ -151,7 +163,9 @@ export default {
             loading: false,
             isScanning: false,
             scanInterval: null,
-            cameraSupported: true
+            cameraSupported: true,
+            cameraActive: false,
+            cameraError: ''
         }
     },
     computed: {
@@ -162,6 +176,12 @@ export default {
             if (this.player.forge > 0) return 'forge_view';
             if (this.player.castle > 0) return 'castle_view';
             return '';
+        },
+        isSecure() {
+            return window.isSecureContext;
+        },
+        httpsUrl() {
+            return window.location.href.replace('http://', 'https://');
         }
     },
     methods: {
@@ -237,7 +257,16 @@ export default {
             }
         },
         startCamera() {
+            this.cameraError = '';
+            this.cameraActive = false;
+            if (!this.isSecure) {
+                this.cameraError = "Для доступу до камери необхідне безпечне з'єднання (HTTPS).";
+                this.cameraSupported = false;
+                return;
+            }
+
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                this.cameraError = "Браузер не підтримує доступ до камери.";
                 this.cameraSupported = false;
                 return;
             }
@@ -249,12 +278,20 @@ export default {
                         video.srcObject = stream;
                         video.setAttribute("playsinline", true);
                         video.play();
+                        if (this.scanInterval) clearInterval(this.scanInterval);
                         this.scanInterval = setInterval(this.processVideoFrame, 500);
                     }
                 })
                 .catch(err => {
                     console.error("Camera error:", err);
                     this.cameraSupported = false;
+                    if (err.name === 'NotAllowedError') {
+                        this.cameraError = "Доступ до камери заборонено користувачем.";
+                    } else if (err.name === 'NotFoundError') {
+                        this.cameraError = "Камеру не знайдено на пристрої.";
+                    } else {
+                        this.cameraError = "Не вдалося відкрити камеру: " + err.message;
+                    }
                 });
         },
         processVideoFrame() {
@@ -263,7 +300,10 @@ export default {
             if (this.lastFound !== '') return;
             if (!video || !canvas || !window.jsQR) return;
 
-            if (video.readyState === video.HAVE_ENOUGH_DATA && !this.isScanning) {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                this.cameraActive = true;
+                if (this.isScanning) return;
+                
                 this.isScanning = true;
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 canvas.height = video.videoHeight;
@@ -533,6 +573,18 @@ export default {
     inset: 0;
     background: rgba(0,0,0,0.6);
     z-index: 5;
+}
+
+.scanner-error-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 5, 5, 0.9);
+    z-index: 10;
+}
+
+.video-wrapper--error {
+    border-color: #ff3e3e;
+    box-shadow: 0 0 15px rgba(255, 62, 62, 0.4);
 }
 
 .btn-xs {
