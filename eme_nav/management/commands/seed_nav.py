@@ -15,7 +15,6 @@ class Command(BaseCommand):
             dict(item_id='clone_master', icon='📦', label='Клон Мастер',   order=6, url='clone_master'),
             dict(item_id='kb',         icon='📚',  label='База Знань',    order=7, url='kb'),
             dict(item_id='chat',       icon='💬',  label='Чат',           order=8, url='chat'),
-            dict(item_id='utilities', icon='🛠️', label='Утиліти', order=10, url='utilities'),
         ]
 
         count = 0
