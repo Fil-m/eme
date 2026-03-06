@@ -97,9 +97,16 @@
             <button id="send-qrcode" @click="scanQR" :disabled="loading" style="cursor: pointer;">Get your reward!</button>
           </div>
           
-          <div class="mt-3 video-wrapper">
+          <div class="mt-3 video-wrapper" v-if="cameraSupported">
             <video ref="qrVideo" playsinline autoplay muted></video>
             <canvas ref="qrCanvas" style="display: none;"></canvas>
+          </div>
+          <div v-else class="mt-3 text-center p-3 border rounded bg-dark-lt" style="background: rgba(0,0,0,0.4); border: 1px dashed #4ca528 !important;">
+            <p class="small mb-2" style="font-size: 14px; text-shadow: none;">📷 Камера заблокована браузером (потрібно HTTPS).<br>Використовуйте фото для сканування:</p>
+            <label class="btn btn-success d-inline-block p-2" style="background: #4ca528; border: none; border-radius: 8px; cursor: pointer;">
+                <span>📂 Обрати фото QR</span>
+                <input type="file" accept="image/*" capture="environment" @change="onFileScan" style="display: none;">
+            </label>
           </div>
         </div>
       </div>
@@ -125,7 +132,8 @@ export default {
             lastFound: '',
             loading: false,
             isScanning: false,
-            scanInterval: null
+            scanInterval: null,
+            cameraSupported: true
         }
     },
     computed: {
@@ -213,6 +221,12 @@ export default {
             }
         },
         startCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.warn("MediaDevices not supported");
+                this.cameraSupported = false;
+                return;
+            }
+
             navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
                 .then(stream => {
                     const video = this.$refs.qrVideo;
@@ -225,7 +239,39 @@ export default {
                         this.scanInterval = setInterval(this.processVideoFrame, 500);
                     }
                 })
-                .catch(err => console.error("Camera error:", err));
+                .catch(err => {
+                    console.error("Camera error:", err);
+                    this.cameraSupported = false;
+                });
+        },
+        onFileScan(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = window.jsQR(imageData.data, canvas.width, canvas.height);
+                    
+                    if (code && code.data) {
+                        this.lastFound = code.data;
+                        this.qrInput = code.data;
+                        this.player.log = "✅ QR-код розпізнано з фото! Натисніть кнопку отримання нагороди.";
+                    } else {
+                        alert("Не вдалося знайти QR-код на цьому зображенні.");
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
         },
         processVideoFrame() {
             const video = this.$refs.qrVideo;
