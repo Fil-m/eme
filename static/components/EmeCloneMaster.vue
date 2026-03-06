@@ -176,8 +176,8 @@ export default {
         return {
             modules: [],
             selectedModules: ['projects', 'network', 'eme_media', 'clone_master'],
-            includeDb: false,
-            includeMedia: false,
+            includeDb: true,
+            includeMedia: true,
             includeSeeds: true,
             cloneName: '',
             loading: false,
