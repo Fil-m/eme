@@ -134,7 +134,7 @@ class CloneCreateView(APIView):
                             continue
                         for file in files:
                             full_path = os.path.join(root, file)
-                            rel_path = os.path.relpath(full_path, settings.BASE_DIR)
+                            rel_path = os.path.relpath(full_path, settings.BASE_DIR).replace('\\', '/')
                             zf.write(full_path, rel_path)
 
             # 3. STATIC & TEMPLATES
@@ -146,7 +146,7 @@ class CloneCreateView(APIView):
                             continue
                         for file in files:
                             full_path = os.path.join(root, file)
-                            rel_path = os.path.relpath(full_path, settings.BASE_DIR)
+                            rel_path = os.path.relpath(full_path, settings.BASE_DIR).replace('\\', '/')
                             zf.write(full_path, rel_path)
 
             # 4. SEED SCRIPTS
@@ -172,7 +172,7 @@ class CloneCreateView(APIView):
                             continue
                         for file in files:
                             full_path = os.path.join(root, file)
-                            rel_path = os.path.relpath(full_path, settings.BASE_DIR)
+                            rel_path = os.path.relpath(full_path, settings.BASE_DIR).replace('\\', '/')
                             zf.write(full_path, rel_path)
 
             # 7. MANIFEST

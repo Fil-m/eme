@@ -14,7 +14,7 @@ class MiniUserSerializer(serializers.ModelSerializer):
 
     def get_avatar(self, obj):
         try:
-            return obj.profile.avatar.url if obj.profile.avatar else None
+            return obj.avatar.url if obj.avatar else None
         except Exception:
             return None
 
