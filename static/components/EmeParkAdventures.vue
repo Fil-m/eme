@@ -85,50 +85,50 @@
     </div> <!-- end container -->
 
     <!-- Bottom HUD -->
-    <div class="bottom_group d-flex align-items-end gap-3 p-3">
+    <div class="bottom_group d-flex flex-column align-items-center gap-3 p-3">
       <!-- Activity Log -->
-      <div id="messages-container" class="flex-grow-1">
+      <div id="messages-container" class="w-100">
         <div id="messages">
           <p>{{ player.log || 'Добро ласкаво в парк!' }}</p>
         </div>
       </div>
 
       <!-- Scanner Area -->
-      <div class="qr-section">
-        <div class="qr-container-pure glass-card">
+      <div class="qr-section w-100 d-flex justify-content-center">
+        <div class="qr-container-pure glass-card w-100" style="max-width: 600px;">
           <!-- Manual Input -->
-          <div class="mb-3">
-             <input type="text" class="form-control form-control-sm mb-2" v-model="qrInput" placeholder="Введіть код вручну..." @keyup.enter="scanQR">
+          <div class="mb-2">
+             <input type="text" class="form-control form-control-sm" v-model="qrInput" placeholder="Введіть код вручну..." @keyup.enter="scanQR">
           </div>
 
           <!-- Video / Fallback -->
           <div class="video-container-static" v-if="cameraSupported">
-               <div class="video-wrapper-static" :class="{'video-wrapper--ready': lastFound}">
-                 <video ref="qrVideo" playsinline autoplay muted></video>
+               <div class="video-wrapper-static w-100" :class="{'video-wrapper--ready': lastFound}" style="height: 300px;">
+                 <video ref="qrVideo" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: cover;"></video>
                  <canvas ref="qrCanvas" style="display: none;"></canvas>
                  <div class="scanner-frame-overlay"></div>
                </div>
           </div>
           
-          <div v-else class="scanner-fallback-static p-2 text-center border-dashed">
-             <p class="small mb-1">📷 Блокування</p>
-             <label class="btn btn-xs btn-success w-100 py-1">
-                <span>📂 Фото QR</span>
+          <div v-else class="scanner-fallback-static p-3 text-center border-dashed">
+             <p class="small mb-2">📷 Камера заблокована</p>
+             <label class="btn btn-sm btn-success w-100 py-2">
+                <span>📂 Вибрати фото QR з галереї</span>
                 <input type="file" accept="image/*" capture="environment" @change="onFileScan" style="display: none;">
              </label>
           </div>
 
           <!-- Status -->
-          <div id="qr-result" class="scanner-status-text mt-2 mb-2" v-if="lastFound">
-             <div class="fw-bold text-success small">✅ Знайдено: {{ lastFound }}</div>
+          <div id="qr-result" class="scanner-status-text mt-2 mb-2 text-center" v-if="lastFound">
+             <div class="fw-bold text-success">✅ Знайдено: {{ lastFound }}</div>
           </div>
           <div v-else class="scanner-status-text mt-2 mb-2 opacity-50 small text-center">
-             Наведіть на QR-код
+             Наведіть камеру на QR-код ресурсу
           </div>
 
           <!-- Action -->
           <div class="qr-actions">
-             <button id="send-qrcode" class="btn btn-primary btn-sm w-100" @click="scanQR" :disabled="loading || (!lastFound && !qrInput)">Отримати!</button>
+             <button id="send-qrcode" class="btn btn-primary w-100 py-2" @click="scanQR" :disabled="loading || (!lastFound && !qrInput)">Отримати ресурс!</button>
           </div>
         </div>
       </div>
@@ -532,13 +532,15 @@ export default {
 }
 
 .video-wrapper-static {
-    width: 320px;
-    height: 240px;
+    width: 100%;
+    max-width: 600px;
+    height: 350px;
     background: #000;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     position: relative;
     border: 2px solid var(--glass-border);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
 }
 
 .video-wrapper-static video {
@@ -567,8 +569,7 @@ export default {
 
 @media (max-width: 992px) {
     .video-wrapper-static {
-        width: 160px;
-        height: 120px;
+        height: 250px;
     }
     .player-health { left: -60px; scale: 0.7; }
     .dragon-health { right: -20px; scale: 0.7; }
