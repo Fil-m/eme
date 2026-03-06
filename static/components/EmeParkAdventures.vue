@@ -1,112 +1,142 @@
 <template>
-  <div class="park-adventures-wrapper" :class="backgroundClass">
+  <div class="park-adventures-wrapper" :class="[backgroundClass, {'park-adventures-wrapper--scanner-expanded': scannerExpanded, 'park-adventures-wrapper--scanner-minimized': !scannerExpanded}]">
     <div class="container">
       
-      <!-- Materials Row -->
-      <div class="materials">
-        <div class="btn_container btn_wood">
-          <div>{{ player.wood }}</div>
+      <!-- Top HUD -->
+      <div class="top_hud d-flex justify-content-between align-items-start">
+        <!-- Materials -->
+        <div class="materials d-flex gap-3">
+          <div class="btn_container btn_wood" title="Wood">
+            <div class="hud-badge">{{ player.wood }}</div>
+          </div>
+          <div class="btn_container btn_iron" title="Iron">
+            <div class="hud-badge">{{ player.iron }}</div>
+          </div>
+          <div class="btn_container btn_gold" title="Gold">
+            <div class="hud-badge">{{ player.gold }}</div>
+          </div>
         </div>
-        <div class="btn_container btn_iron">
-          <div>{{ player.iron }}</div>
-        </div>
-        <div class="btn_container btn_gold">
-          <div>{{ player.gold }}</div>
+
+        <!-- Mode Toggle -->
+        <div class="input_wrap glass-card">
+          <label class="form-check form-switch m-0 d-flex align-items-center gap-2">
+            <input class="form-check-input" type="checkbox" v-model="battleMode">
+            <span class="mode-text small fw-bold">{{ battleMode ? 'ESCAPE' : 'BATTLE' }}</span>
+          </label>
         </div>
       </div>
 
-      <!-- Right Group: Health -->
-      <div class="right_group">
-        <div class="btn_container btn_health">
-          <div>{{ player.life }}</div>
+      <!-- Health Indicators -->
+      <div class="health-system">
+        <div class="btn_container btn_health player-health" :style="{ '--hp': player.life + '%' }">
+          <div class="hp-label">{{ player.life }}</div>
         </div>
-        <div class="btn_container btn_dragon_health">
-          <div>{{ player.dragon_life }}</div>
+        <div class="btn_container btn_dragon_health dragon-health" :style="{ '--hp': player.dragon_life + '%' }">
+          <div class="hp-label">{{ player.dragon_life }}</div>
         </div>
       </div>
 
-      <!-- Main Interaction Form (div instead of form + prevent default) -->
+      <!-- Main Stage -->
       <div id="buttons_form">
-        
-        <!-- Toggle Battle Mode -->
-        <div class="input_wrap">
-          <input type="checkbox" id="battle_mode" v-model="battleMode">
-          <div class="mode-text">{{ battleMode ? 'Escape Mode' : 'Battle' }}</div>
-        </div>
-        <br>
-
-        <!-- Big Buildings Buttons -->
-        <div class="btn_container btn_build_castle build build1" v-if="player.castle === 0 && !battleMode && backgroundClass !== 'forge_view' && backgroundClass !== 'magic_view' && backgroundClass !== 'won_view'">
-          <button @click="doAction('castle')">Build Castle</button>
-        </div>
-        
-        <div class="btn_container btn_build_forge build build2" v-if="player.forge === 0 && player.castle > 0 && !battleMode && backgroundClass !== 'magic_view' && backgroundClass !== 'won_view'">
-          <button @click="doAction('forge')">Build Forge</button>
-        </div>
-        
-        <div class="btn_container btn_build_magic build build3" v-if="player.magic === 0 && player.forge > 0 && !battleMode && backgroundClass !== 'won_view'">
-          <button @click="doAction('magic')">Build Magic</button>
+        <!-- Construction -->
+        <div class="construction-zone">
+            <div class="btn_container btn_build_castle build build1" v-if="player.castle === 0 && !battleMode && backgroundClass !== 'forge_view' && backgroundClass !== 'magic_view' && backgroundClass !== 'won_view'">
+              <button class="btn-action" @click="doAction('castle')">Build Castle</button>
+            </div>
+            <div class="btn_container btn_build_forge build build2" v-if="player.forge === 0 && player.castle > 0 && !battleMode && backgroundClass !== 'magic_view' && backgroundClass !== 'won_view'">
+              <button class="btn-action" @click="doAction('forge')">Build Forge</button>
+            </div>
+            <div class="btn_container btn_build_magic build build3" v-if="player.magic === 0 && player.forge > 0 && !battleMode && backgroundClass !== 'won_view'">
+              <button class="btn-action" @click="doAction('magic')">Build Magic</button>
+            </div>
         </div>
 
-        <!-- Right Side Buttons: Crafting / Items -->
-        <div class="right_btns">
-          <!-- Shown if in Forge or higher OR in Battle mode -->
-          <template v-if="player.forge > 0 || battleMode">
+        <!-- Arsenal -->
+        <div class="right_btns glass-panel" v-if="player.forge > 0 || battleMode">
             <div class="btn_container btn_shield">
-              <button @click="doMainAction('shield')">Shield</button> <p>{{ player.shield }}</p>
+              <button class="btn-tool" @click="doMainAction('shield')"></button>
+              <p class="tool-count">{{ player.shield }}</p>
             </div>
             <div class="btn_container btn_sword">
-              <button @click="doMainAction('sword')">Sword</button> <p>{{ player.sword }}</p>
+              <button class="btn-tool" @click="doMainAction('sword')"></button>
+              <p class="tool-count">{{ player.sword }}</p>
             </div>
-          </template>
-
-          <!-- Shown if in Magic or higher OR in Battle mode -->
-          <template v-if="player.magic > 0 || battleMode">
-            <div class="btn_container btn_magic_shield">
-              <button @click="doMainAction('magic_shield')">Magic Shield</button> <p>{{ player.magic_shield }}</p>
-            </div>
-            <div class="btn_container btn_magic_sword">
-              <button @click="doMainAction('magic_sword')">Magic Sword</button> <p>{{ player.magic_sword }}</p>
-            </div>
-            <div class="btn_container btn_elixir">
-              <button @click="doMainAction('elixir')">Elixir</button> <p>{{ player.elixir }}</p>
-            </div>
-            <div class="btn_container btn_flash">
-              <button @click="doMainAction('flash')">Flash</button> <p>{{ player.flash }}</p>
-            </div>
-          </template>
+            
+            <template v-if="player.magic > 0 || battleMode">
+                <div class="btn_container btn_magic_shield">
+                  <button class="btn-tool" @click="doMainAction('magic_shield')"></button>
+                  <p class="tool-count">{{ player.magic_shield }}</p>
+                </div>
+                <div class="btn_container btn_magic_sword">
+                  <button class="btn-tool" @click="doMainAction('magic_sword')"></button>
+                  <p class="tool-count">{{ player.magic_sword }}</p>
+                </div>
+                <div class="btn_container btn_elixir">
+                  <button class="btn-tool" @click="doMainAction('elixir')"></button>
+                  <p class="tool-count">{{ player.elixir }}</p>
+                </div>
+                <div class="btn_container btn_flash">
+                  <button class="btn-tool" @click="doMainAction('flash')"></button>
+                  <p class="tool-count">{{ player.flash }}</p>
+                </div>
+            </template>
         </div>
-
-      </div> <!-- end buttons_form -->
+      </div>
     </div> <!-- end container -->
 
-    <!-- Bottom Group: Logs and QR -->
-    <div class="bottom_group">
-      <!-- Logs -->
-      <div id="messages-container">
+    <!-- Bottom HUD -->
+    <div class="bottom_group d-flex align-items-end gap-3 p-3">
+      <!-- Activity Log -->
+      <div id="messages-container" class="flex-grow-1">
         <div id="messages">
-          <p>{{ player.log }}</p>
+          <p>{{ player.log || 'Добро ласкаво в парк!' }}</p>
         </div>
       </div>
 
-      <!-- QR Reader / Resource input -->
-      <div class="wrap">
+      <!-- Scanner Area -->
+      <div class="qr-section">
         <div class="qr-container-pure">
-          <div id="qr-result" v-if="lastFound">Щойно знайдено: {{ lastFound }}</div>
-          <div id="qr_form" class="mt-2 d-flex align-items-center">
-            <button id="send-qrcode" @click="scanQR" :disabled="loading" style="cursor: pointer;">Get your reward!</button>
+          <!-- Summary card if expanded -->
+          <div class="scanner-summary mb-2" v-if="scannerExpanded && !lastFound">
+            <div class="scanner-summary__empty">Знайдіть QR-код у парку,<br>щоб отримати ресурси</div>
           </div>
           
-          <div class="mt-3 video-wrapper" v-if="cameraSupported">
-            <video ref="qrVideo" playsinline autoplay muted></video>
-            <canvas ref="qrCanvas" style="display: none;"></canvas>
+          <div id="qr-result" class="scanner-summary scanner-summary--active mb-2" v-if="lastFound">
+             <div class="fw-bold text-success mb-1">Знайдено: {{ lastFound }}</div>
+             <div class="small opacity-75">Натисніть кнопку нижче, щоб отримати!</div>
           </div>
-          <div v-else class="mt-3 text-center p-3 border rounded bg-dark-lt" style="background: rgba(0,0,0,0.4); border: 1px dashed #4ca528 !important;">
-            <p class="small mb-2" style="font-size: 14px; text-shadow: none;">📷 Камера заблокована браузером (потрібно HTTPS).<br>Використовуйте фото для сканування:</p>
-            <label class="btn btn-success d-inline-block p-2" style="background: #4ca528; border: none; border-radius: 8px; cursor: pointer;">
-                <span>📂 Обрати фото QR</span>
+
+          <!-- Video / Fallback -->
+          <div class="video-container-wrapper" v-if="cameraSupported">
+               <div class="video-wrapper" 
+                    :class="{'video-wrapper--expanded': scannerExpanded, 'video-wrapper--minimized': !scannerExpanded, 'video-wrapper--ready': lastFound}"
+                    @click="scannerExpanded = !scannerExpanded">
+                 
+                 <video ref="qrVideo" playsinline autoplay muted></video>
+                 <canvas ref="qrCanvas" style="display: none;"></canvas>
+                 
+                 <div class="scanner-frame" v-if="scannerExpanded"></div>
+                 <div class="scanner-status" v-if="scannerExpanded">
+                    {{ isScanning ? 'Аналіз...' : 'Наведіть на код' }}
+                 </div>
+                 <div class="scanner-zoom-indicator">
+                    {{ scannerExpanded ? 'TAP TO CLOSE' : 'TAP TO SCAN' }}
+                 </div>
+               </div>
+          </div>
+          
+          <div v-else class="scanner-fallback p-3 text-center glass-card border-dashed">
+             <p class="small mb-2">📷 Камера заблокована.<br>Використовуйте фото:</p>
+             <label class="btn btn-sm btn-success w-100">
+                <span>📂 Обрати QR</span>
                 <input type="file" accept="image/*" capture="environment" @change="onFileScan" style="display: none;">
-            </label>
+             </label>
+          </div>
+
+          <!-- Actions -->
+          <div class="qr-actions mt-2 d-flex gap-2" v-if="scannerExpanded">
+             <button id="send-qrcode" class="btn btn-primary flex-grow-1" @click="scanQR" :disabled="loading || !lastFound">Отримати!</button>
+             <button class="btn btn-secondary scanner-secondary" @click="scannerExpanded = false">✕</button>
           </div>
         </div>
       </div>
@@ -133,7 +163,8 @@ export default {
             loading: false,
             isScanning: false,
             scanInterval: null,
-            cameraSupported: true
+            cameraSupported: true,
+            scannerExpanded: false
         }
     },
     computed: {
@@ -197,7 +228,6 @@ export default {
         },
         async scanQR() {
             if (!this.qrInput.trim() && !this.lastFound.trim()) return;
-            // If they clicked the button but the input is empty, fallback to lastFound
             const codeToProcess = this.qrInput.trim() || this.lastFound.trim();
             this.loading = true;
             try {
@@ -222,7 +252,6 @@ export default {
         },
         startCamera() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                console.warn("MediaDevices not supported");
                 this.cameraSupported = false;
                 return;
             }
@@ -234,8 +263,6 @@ export default {
                         video.srcObject = stream;
                         video.setAttribute("playsinline", true);
                         video.play();
-                        
-                        // Run scanner around 2 times a second (500ms) to prevent CPU overload
                         this.scanInterval = setInterval(this.processVideoFrame, 500);
                     }
                 })
@@ -264,9 +291,10 @@ export default {
                     if (code && code.data) {
                         this.lastFound = code.data;
                         this.qrInput = code.data;
-                        this.player.log = "✅ QR-код розпізнано з фото! Натисніть кнопку отримання нагороди.";
+                        this.player.log = "✅ QR-код розпізнано! Натисніть кнопку.";
+                        this.scannerExpanded = true;
                     } else {
-                        alert("Не вдалося знайти QR-код на цьому зображенні.");
+                        alert("Код не знайдено.");
                     }
                 };
                 img.src = event.target.result;
@@ -276,10 +304,7 @@ export default {
         processVideoFrame() {
             const video = this.$refs.qrVideo;
             const canvas = this.$refs.qrCanvas;
-            
-            // Do not scan if we already found a code and are waiting for user click
             if (this.lastFound !== '') return;
-            
             if (!video || !canvas || !window.jsQR) return;
 
             if (video.readyState === video.HAVE_ENOUGH_DATA && !this.isScanning) {
@@ -296,9 +321,9 @@ export default {
                 });
 
                 if (code && code.data && code.data.trim() !== '') {
-                    // Update UI but require manual click to collect
                     this.lastFound = code.data;
                     this.qrInput = code.data;
+                    this.scannerExpanded = true;
                 }
                 this.isScanning = false;
             }
@@ -309,389 +334,252 @@ export default {
         this.startCamera();
     },
     beforeUnmount() {
-        // Stop camera stream when leaving the page
         const video = this.$refs.qrVideo;
         if (video && video.srcObject) {
             video.srcObject.getTracks().forEach(track => track.stop());
         }
-        if (this.scanInterval) {
-            clearInterval(this.scanInterval);
-        }
+        if (this.scanInterval) clearInterval(this.scanInterval);
     }
 }
 </script>
 
 <style scoped>
-/* Scoping all original Park Adventures styles to .park-adventures-wrapper */
-
 .park-adventures-wrapper {
+    --resource-size: 150px;
+    --player-health-size: 260px;
+    --status-icon-size: 220px;
+    --hud-badge-size: 42px;
+    --tool-size: 190px;
+    --scanner-mini-width: 140px;
+    --scanner-mini-height: 105px;
+    --scanner-expanded-max-width: 360px;
+    --glass-dark: rgba(2, 8, 14, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --eme-green: #4ca528;
+
     position: relative;
     width: 100%;
     min-height: calc(100vh - 100px);
     color: white;
-    text-shadow: 4px 10px 15px #050505;
-    font-family: sans-serif;
-    
-    /* Default Background */
-    background: url(/static/images/background.png);
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    font-family: 'Inter', sans-serif;
+    background: url(/static/images/background.png) center/cover no-repeat fixed;
     border-radius: 12px;
     overflow: hidden;
-}
-
-.park-adventures-wrapper.fight_view {
-    background: url(/static/images/fight_bcgrd.png) !important;
-    background-size: cover !important;
-    background-attachment: fixed !important;
-    background-position: center !important;
-}
-
-.park-adventures-wrapper.castle_view {
-    background: url(/static/images/castle.png);
-    background-size: cover;
-    background-attachment: fixed;
-}
-
-.park-adventures-wrapper.forge_view {
-    background: url(/static/images/forge_view.png);
-    background-size: cover;
-    background-attachment: fixed;
-    background-position: left;
-}
-
-.park-adventures-wrapper.magic_view {
-    background: url(/static/images/magic_view.png);
-    background-size: cover;
-    background-attachment: fixed;
-    background-position: left;
-}
-
-.park-adventures-wrapper.won_view {
-    background: url(/static/images/won.jpg);
-    background-size: cover;
-    background-attachment: fixed;
-    background-position: center;
-}
-
-.container {
-    width: 90%;
-    margin: 0 auto;
-    position: relative;
-    height: 100%;
-}
-
-.materials {
-    display: flex;
-    justify-content: center;
-    font-size: 50px;
-    padding-top: 20px;
-}
-
-.right_group, .mode-text {
-    font-size: 50px;
-}
-
-#buttons_form {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    align-items: flex-end;
-    justify-content: space-around;
-    margin-top: 80px;
 }
 
-#buttons_form button,
-#send-qrcode {
-    font-size: 50px;
-    margin-top: 30px;
+.park-adventures-wrapper.fight_view { background-image: url(/static/images/fight_bcgrd.png); }
+.park-adventures-wrapper.castle_view { background-image: url(/static/images/castle.png); }
+.park-adventures-wrapper.forge_view { background-image: url(/static/images/forge_view.png); }
+.park-adventures-wrapper.magic_view { background-image: url(/static/images/magic_view.png); }
+.park-adventures-wrapper.won_view { background-image: url(/static/images/won.jpg); }
+
+.container {
+    padding: 24px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-#send-qrcode {
-    padding: 20px;
-    border-radius: 10px;
-    border: none;
-    background-color: #4ca528;
-    color: white;
-    text-shadow: 4px 10px 15px #050505;
-}
-
-#qr-result {
-    font-size: 40px;
-}
-
-#buttons_form button {
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-}
-
-#buttons_form .build button {
-    opacity: 0;
-}
+/* TOP HUD */
+.top_hud { z-index: 10; }
 
 .btn_container {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-around;
-    width: 150px;
-    height: 150px;
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: contain;
     background-position: center;
-}
-
-.btn_container p {
-    font-size: 40px;
-    margin-left: 10px;
     position: relative;
-    left: 40px;
 }
 
-/* Icons */
+.materials .btn_container { width: var(--resource-size); height: var(--resource-size); }
+.btn_wood { background-image: url(/static/images/wood.png); }
+.btn_iron { background-image: url(/static/images/iron.png); }
+.btn_gold { background-image: url(/static/images/gold.png); }
+
+.hud-badge {
+    position: absolute;
+    bottom: 20%;
+    right: 15%;
+    min-width: var(--hud-badge-size);
+    height: var(--hud-badge-size);
+    background: #000;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+    border: 2px solid var(--eme-green);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.glass-card {
+    background: var(--glass-dark);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 12px 16px;
+}
+
+.form-check-input:checked { background-color: #ff3e3e; border-color: #ff3e3e; }
+
+/* HEALTH SYSTEM */
+.health-system {
+    position: relative;
+    height: 0;
+    z-index: 5;
+}
+
+.player-health {
+    position: absolute;
+    top: 40px;
+    left: -100px;
+    width: var(--player-health-size);
+    height: var(--player-health-size);
+    background-image: url(/static/images/health.png);
+}
+
+.dragon-health {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    width: var(--status-icon-size);
+    height: var(--status-icon-size);
+    background-image: url(/static/images/dragon_health.png);
+}
+
+.hp-label {
+    position: absolute;
+    bottom: 10%;
+    width: 100%;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+/* MAIN STAGE */
+#buttons_form {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.construction-zone {
+    position: relative;
+    width: 300px;
+    height: 300px;
+}
+
+.btn-action {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.btn_build_castle { width: 300px; height: 300px; background-image: url(/static/images/build_castle.png); }
+.btn_build_forge { width: 300px; height: 300px; background-image: url(/static/images/build_forge.png); }
+.btn_build_magic { width: 300px; height: 300px; background-image: url(/static/images/build_magic.png); }
+
+.right_btns {
+    position: fixed;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 24px;
+    border-radius: 32px;
+}
+
+.btn-tool {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.right_btns .btn_container { width: var(--tool-size); height: var(--tool-size); }
 .btn_shield { background-image: url(/static/images/shield.png); }
 .btn_sword { background-image: url(/static/images/sword.png); }
 .btn_magic_shield { background-image: url(/static/images/magic_shield.png); }
 .btn_magic_sword { background-image: url(/static/images/magic_sword.png); }
-.btn_elixir { background-image: url(/static/images/elixir.png); background-size: auto; }
+.btn_elixir { background-image: url(/static/images/elixir.png); background-size: 60%; }
 .btn_flash { background-image: url(/static/images/flash.png); }
-.btn_build_castle { background-image: url(/static/images/build_castle.png); }
-.btn_build_forge { background-image: url(/static/images/build_forge.png); }
-.btn_build_magic { background-image: url(/static/images/build_magic.png); }
-.btn_wood { background-image: url(/static/images/wood.png); }
-.btn_iron { background-image: url(/static/images/iron.png); }
-.btn_gold { background-image: url(/static/images/gold.png); }
-.btn_dragon_health { background-image: url(/static/images/dragon_health.png); }
 
-.btn_health {
-    background-image: url(/static/images/health.png);
-    width: 130px;
-    height: 130px;
-    background-size: auto;
-}
-
-.btn_container.btn_health {
-    position: absolute;
-    top: 30px;
-}
-
-.btn_container.btn_dragon_health {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-}
-
-input[type="checkbox"] {
-    appearance: auto !important;
-    -webkit-appearance: checkbox !important;
-    width: 50px;
-    height: 50px;
-    margin-right: 20px;
-    background: white;
-}
-
-.input_wrap {
-    display: flex;
-    align-items: center;
-}
-
-.wrap {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-    align-items: center;
-}
-
-.build {
-    position: absolute;
-    bottom: 250px;
-    width: 20%;
-    padding: 20px;
-    font-size: 40px;
-    z-index: 100;
-}
-
-.build1, .build2, .build3 {
-    left: calc(50% - 93px);
-}
-
-.right_btns {
-    margin-right: 50px;
-}
-
-.btn_elixir button { margin-right: 30px; }
-.btn_flash button { margin-right: 15px; }
-
-.bottom_group {
-    position: absolute;
-    bottom: 20px;
-    width: 90%;
-    left: 5%;
-}
-
-/* Pure non-bootstrap overrides */
-.pure-input {
-    background: #f1efef;
-    border: none;
-    border-radius: 10px;
-    font-size: 30px;
-    padding: 10px 20px;
-    color: #333;
-    outline: none;
-    width: 60%;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.pure-input:focus {
-    outline: none;
-}
-
-.qr-container-pure {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-#messages-container {
-    position: relative;
-    margin: 0 auto;
-    height: 100px;
-    overflow-y: auto;
-    border: none;
-    border-radius: 10px;
-    padding: 5px;
-    white-space: pre-wrap;
-    background-color: #e4e6d3;
-}
-
-#messages {
+.tool-count {
     position: absolute;
     top: 0;
-    width: 100%;
-    height: 100%;
-    color: #417c21;
-    z-index: 9999;
-    font-size: 40px;
-    padding-left: 20px;
+    right: 0;
+    background: #000;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-weight: 800;
+    font-size: 14px;
+    border: 1px solid var(--eme-green);
+}
+
+/* BOTTOM HUD */
+.bottom_group { z-index: 20; }
+
+#messages-container {
+    background: rgba(228, 230, 211, 0.9);
+    border-radius: 16px;
+    padding: 12px 20px;
+    min-height: 80px;
     display: flex;
     align-items: center;
-    text-shadow: 4px 10px 15px #f1eaea;
+    color: #417c21;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
 
-#messages p {
-    margin: 0;
-    padding: 0;
+.video-wrapper {
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid var(--glass-border);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* 
-=================================================== 
-MOBILE ADAPTATIONS
-=================================================== 
-*/
+.video-wrapper--minimized { width: var(--scanner-mini-width); height: var(--scanner-mini-height); }
+.video-wrapper--expanded { width: var(--scanner-expanded-max-width); aspect-ratio: 4/3; }
+.video-wrapper--ready { border-color: var(--eme-green); box-shadow: 0 0 20px var(--eme-green); }
+
+.video-wrapper video { width: 100%; height: 100%; object-fit: cover; }
+
+.scanner-frame {
+    position: absolute;
+    inset: 20%;
+    border: 2px solid white;
+    border-radius: 20px;
+    opacity: 0.5;
+}
+
+.scanner-zoom-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 8px;
+    font-size: 10px;
+    border-radius: 4px;
+    font-weight: 800;
+}
+
 @media (max-width: 992px) {
-    /* Scale down all massive text sizes and margins */
-    .materials { font-size: 24px; }
-    .right_group, .mode-text { font-size: 24px; }
-    
-    #buttons_form button, #send-qrcode {
-        font-size: 16px;
-        margin-top: 5px;
-        padding: 8px 15px;
-    }
-    
-    #qr-result { font-size: 18px; color: #4ca528; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 8px;}
-    
-    .btn_container {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .btn_health {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .btn_container p {
-        font-size: 18px;
-        margin-left: 2px;
-        left: unset;
-    }
-
-    /* Message log adaptations */
-    #messages-container {
-        height: 60px;
-    }
-    #messages {
-        font-size: 16px;
-        padding-left: 10px;
-        text-shadow: 1px 1px 2px #f1eaea;
-    }
-    
-    input[type="checkbox"] {
-        width: 25px;
-        height: 25px;
-        margin-right: 10px;
-    }
-
-    .input_wrap {
-        position: absolute;
-        top: 140px;
-        right: 10px;
-        z-index: 100;
-    }
-
-    .build {
-        font-size: 20px;
-        width: 150px;
-        top: 35%;
-        bottom: auto;
-        z-index: 100;
-    }
-    
-    .build1, .build2, .build3 {
-        left: calc(50% - 30px);
-    }
-    
-    .right_btns {
-        margin-right: 10px;
-    }
-    
-    .btn_container.btn_health, .btn_container.btn_dragon_health {
-        position: relative;
-        top: 0;
-        right: 0;
-    }
-    .right_group {
-        display: flex;
-        justify-content: flex-end;
-        gap: 20px;
-        margin-top: 10px;
-        margin-right: 20px;
-    }
-
-    /* Form input & Video */
-    .pure-input {
-        font-size: 16px !important;
-        width: 150px;
-        padding: 8px 12px;
-    }
-    
-    .video-wrapper {
-        margin-top: 5px !important;
-    }
-
-    .video-wrapper video {
-        width: 100%;
-        max-width: 400px;
-        height: auto;
-        border-radius: 8px;
-        border: none;
-    }
-    
-    #buttons_form {
-        margin-top: 20px;
-    }
+    .player-health { left: -60px; scale: 0.7; }
+    .dragon-health { right: -20px; scale: 0.7; }
+    .right_btns { right: 10px; padding: 10px; scale: 0.8; }
+    .hud-badge { scale: 0.8; }
 }
 </style>
