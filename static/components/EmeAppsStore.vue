@@ -25,6 +25,21 @@
                        @click.prevent="currentCategory = 'utils'">
                         🔧 Утиліти
                     </a>
+                    <a href="#" class="list-group-item list-group-item-action" 
+                       :class="{ active: currentCategory === 'productivity' }" 
+                       @click.prevent="currentCategory = 'productivity'">
+                        🚀 Продуктивність
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" 
+                       :class="{ active: currentCategory === 'media' }" 
+                       @click.prevent="currentCategory = 'media'">
+                        🖼️ Медіа
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" 
+                       :class="{ active: currentCategory === 'system' }" 
+                       @click.prevent="currentCategory = 'system'">
+                        ⚙️ Система
+                    </a>
                 </div>
             </div>
 
@@ -64,7 +79,7 @@ export default {
     emits: ['close'],
     data() {
         return {
-            currentCategory: 'games',
+            currentCategory: 'all',
             apps: [
                 {
                     id: 'park_adventures',
@@ -83,6 +98,42 @@ export default {
                     icon: '🔍',
                     color: '#00e5ff',
                     developer: 'EME Utilities'
+                },
+                {
+                    id: 'kb',
+                    category: 'productivity',
+                    name: 'База Знань',
+                    description: 'Створення та зберігання нотаток, статей та документації.',
+                    icon: '📚',
+                    color: '#f59f00',
+                    developer: 'EME Core'
+                },
+                {
+                    id: 'gallery',
+                    category: 'media',
+                    name: 'Галерея',
+                    description: 'Управління фотографіями та медіа-файлами.',
+                    icon: '🖼️',
+                    color: '#e64980',
+                    developer: 'EME Core'
+                },
+                {
+                    id: 'settings',
+                    category: 'system',
+                    name: 'Налаштування',
+                    description: 'Конфігурація профілю, приватності та системи EME OS.',
+                    icon: '⚙️',
+                    color: '#495057',
+                    developer: 'EME Core'
+                },
+                {
+                    id: 'clone_master',
+                    category: 'system',
+                    name: 'Клон Мастер',
+                    description: 'Створення та керування портативними клонами екосистеми.',
+                    icon: '📦',
+                    color: '#7048e8',
+                    developer: 'EME Core'
                 }
             ]
         };
