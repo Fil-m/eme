@@ -40,10 +40,11 @@
 
 ### Android (Termux)
 
-To install on Termux, run this magic command:
+Для швидкого встановлення «в один рядок» (включаючи налаштування пам'яті, оновлення та запуск) виконайте цю команду в Termux:
 ```bash
-curl -L https://raw.githubusercontent.com/Fil-m/eme/main/bootstrap_eme.sh | bash
+termux-setup-storage && pkg update -y && pkg install git python -y && git clone https://github.com/Fil-m/eme.git && cd eme && bash start.sh
 ```
+> **Примітка**: Повна інсталяція (Python + бібліотеки + проект) займає приблизно **300-400 МБ**.
 
 ---
 
