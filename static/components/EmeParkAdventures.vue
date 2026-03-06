@@ -96,12 +96,9 @@
       <!-- Scanner Area -->
       <div class="qr-section">
         <div class="qr-container-pure glass-card">
-          <!-- Status -->
-          <div id="qr-result" class="scanner-status-text mb-2" v-if="lastFound">
-             <div class="fw-bold text-success small">✅ Знайдено: {{ lastFound }}</div>
-          </div>
-          <div v-else class="scanner-status-text mb-2 opacity-50 small">
-             Наведіть на QR-код
+          <!-- Manual Input -->
+          <div class="mb-3">
+             <input type="text" class="form-control form-control-sm mb-2" v-model="qrInput" placeholder="Введіть код вручну..." @keyup.enter="scanQR">
           </div>
 
           <!-- Video / Fallback -->
@@ -121,9 +118,17 @@
              </label>
           </div>
 
+          <!-- Status -->
+          <div id="qr-result" class="scanner-status-text mt-2 mb-2" v-if="lastFound">
+             <div class="fw-bold text-success small">✅ Знайдено: {{ lastFound }}</div>
+          </div>
+          <div v-else class="scanner-status-text mt-2 mb-2 opacity-50 small text-center">
+             Наведіть на QR-код
+          </div>
+
           <!-- Action -->
-          <div class="qr-actions mt-2">
-             <button id="send-qrcode" class="btn btn-primary btn-sm w-100" @click="scanQR" :disabled="loading || !lastFound">Отримати!</button>
+          <div class="qr-actions">
+             <button id="send-qrcode" class="btn btn-primary btn-sm w-100" @click="scanQR" :disabled="loading || (!lastFound && !qrInput)">Отримати!</button>
           </div>
         </div>
       </div>
@@ -527,8 +532,8 @@ export default {
 }
 
 .video-wrapper-static {
-    width: 240px;
-    height: 180px;
+    width: 320px;
+    height: 240px;
     background: #000;
     border-radius: 12px;
     overflow: hidden;
