@@ -4,9 +4,12 @@ from profiles.models import EMEUser, WallPost, WallComment
 from eme_chat.models import Message, ChatRoom
 from network.models import Node
 import time
+from django.utils import timezone
 from urllib.parse import urljoin
+import threading
 
 SYNC_PORT = 8000  # Default port for development. Should probably be dynamic or configurable.
+db_lock = threading.Lock()
 
 def get_or_create_user(username):
     """Fetches a user locally by username, or creates a placeholder if missing."""
@@ -28,7 +31,8 @@ def pull_and_save_object(source_ip, obj_type, sync_id):
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
             data = resp.json()
-            save_synced_object(obj_type, data)
+            with db_lock:
+                save_synced_object(obj_type, data)
     except Exception as e:
         print(f"Failed to pull {obj_type} {sync_id} from {source_ip}: {e}")
 
@@ -41,11 +45,12 @@ def catchup_with_node(source_ip, last_sync_at):
         resp = requests.get(url, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
-            for item in data.get('items', []):
-                save_synced_object(item['type'], item['data'])
+            with db_lock:
+                for item in data.get('items', []):
+                    save_synced_object(item['type'], item['data'])
                 
-            # Update last_sync_at locally
-            Node.objects.filter(ip_address=source_ip).update(last_sync_at=time.localtime())
+                # Update last_sync_at locally
+                Node.objects.filter(ip_address=source_ip).update(last_sync_at=timezone.now())
     except Exception as e:
         print(f"Failed catchup with {source_ip}: {e}")
 
