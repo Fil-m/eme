@@ -41,6 +41,17 @@
                         <div class="mod-deps" v-if="mod.deps.length">Deps: {{ mod.deps.join(', ') }}</div>
                     </div>
                 </div>
+
+                <!-- ALTERNATIVE -->
+                <div class="px-4 pt-4 pb-2">
+                    <div class="small fw-bold text-muted" style="letter-spacing:1px;">АЛЬТЕРНАТИВА</div>
+                </div>
+                <div class="px-3">
+                    <div class="p-3 rounded mb-3" style="background: rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.1); cursor: pointer;" @click="$emit('open-kb', { articleId: 12 })">
+                        <div class="fw-bold small mb-1" style="color: #00e5ff;">🚀 Чисте встановлення</div>
+                        <div class="small text-muted" style="font-size: 11px;">Інструкція та QR-код для встановлення оригінальної версії з GitHub</div>
+                    </div>
+                </div>
             </div>
 
             <!-- RIGHT: Options + Result -->

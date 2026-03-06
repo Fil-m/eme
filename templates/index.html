@@ -79,9 +79,11 @@
                 @close="activeApp = null"></eme-projects>
 
             <eme-clone-master v-if="activeApp === 'clone_master'" :user="user" :auth="auth"
+                @open-kb="kbArticleId = $event.articleId; activeApp = 'kb'"
                 @close="activeApp = null"></eme-clone-master>
 
-            <eme-kb v-if="activeApp === 'kb'" :user="user" :auth="auth" @close="activeApp = null"></eme-kb>
+            <eme-kb v-if="activeApp === 'kb'" :user="user" :auth="auth" :initial-article-id="kbArticleId"
+                @close="activeApp = null; kbArticleId = null"></eme-kb>
 
             <eme-chat v-if="activeApp === 'chat'" :user="user" :auth="auth" @close="activeApp = null"></eme-chat>
 
@@ -129,6 +131,7 @@
                     navItems: [],
                     systemSettings: {},
                     activeApp: null,
+                    kbArticleId: null,
                     visitingUser: null
                 }
             },

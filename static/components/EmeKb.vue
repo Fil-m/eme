@@ -66,9 +66,7 @@
                     </div>
                     <!-- Reader Content -->
                     <div class="overflow-auto flex-grow-1">
-                        <div class="reader-content font-serif">
-                            {{ selectedArticle.content }}
-                        </div>
+                        <div class="reader-content font-serif" v-html="formattedContent"></div>
                     </div>
                 </div>
 
@@ -171,6 +169,7 @@
 
 <script>
 export default {
+    props: ['user', 'auth', 'initialArticleId'],
     data() {
         return {
             loading: true,
@@ -209,7 +208,14 @@ export default {
                     (a.tags && a.tags.toLowerCase().includes(sq))
                 );
             }
-            return list;
+        },
+        formattedContent() {
+            if (!this.selectedArticle || !this.selectedArticle.content) return '';
+            let text = this.selectedArticle.content;
+            if (!text.includes('<')) {
+                return text.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '<br>').join('');
+            }
+            return text;
         }
     },
     methods: {
@@ -326,8 +332,12 @@ export default {
             } catch (e) { console.error(e); }
         }
     },
-    mounted() {
-        this.fetchData();
+    async mounted() {
+        await this.fetchData();
+        if (this.initialArticleId) {
+            const art = this.articles.find(a => a.id == this.initialArticleId);
+            if (art) this.selectedArticle = art;
+        }
     }
 }
 </script>
