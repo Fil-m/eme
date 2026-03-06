@@ -168,7 +168,7 @@
                                 <li>Відкрийте <strong>Termux</strong> на телефоні.</li>
                                 <li>Відскануйте QR або вставте команду.</li>
                                 <li>Система сама завантажить, розпакує та запустить EME.</li>
-                                <li>Відкрийте браузер: <code>http://localhost:8000</code></li>
+                                <li>Відкрийте браузер: <code>https://localhost:8000</code></li>
                             </ol>
                         </div>
                     </div>
@@ -204,7 +204,8 @@ export default {
     computed: {
         absoluteUrl() {
             if (!this.resultUrl) return '';
-            const base = this.serverIp ? `http://${this.serverIp}:8000` : window.location.origin;
+            const protocol = window.location.protocol; // Detect http or https
+            const base = this.serverIp ? `${protocol}//${this.serverIp}:8000` : window.location.origin;
             return base + this.resultUrl;
         },
         termuxCommand() {

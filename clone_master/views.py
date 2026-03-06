@@ -119,7 +119,7 @@ class CloneCreateView(APIView):
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
             # 1. CORE FILES
-            core_files = ['manage.py', 'requirements.txt', 'start.sh', 'start.bat', 'bootstrap_eme.sh', 'README.md']
+            core_files = ['manage.py', 'requirements.txt', 'start.sh', 'start.bat', 'setup_ssl.py', 'bootstrap_eme.sh', 'README.md']
             for f in core_files:
                 f_path = os.path.join(settings.BASE_DIR, f)
                 if os.path.exists(f_path):
@@ -202,6 +202,7 @@ pkg update -y
 pkg install -y python python-numpy curl unzip git libjpeg-turbo libpng ffmpeg libxml2 libxslt
 unzip clone.zip -d eme && cd eme
 bash start.sh
+# Після запуску відкрийте: https://localhost:8000
 ```
 
 ## Notes
