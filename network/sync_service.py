@@ -57,7 +57,19 @@ def catchup_with_node(source_ip, last_sync_at):
 def save_synced_object(obj_type, data):
     """Saves a JSON object payload into the local database without conflicts."""
     try:
-        if obj_type == 'wallpost':
+        if obj_type == 'user':
+            EMEUser.objects.update_or_create(
+                username=data['username'],
+                defaults={
+                    'first_name': data.get('first_name', ''),
+                    'last_name': data.get('last_name', ''),
+                    'bio': data.get('bio', ''),
+                    'level': data.get('level', 1),
+                    'points': data.get('points', 0),
+                }
+            )
+            
+        elif obj_type == 'wallpost':
             owner = get_or_create_user(data.get('owner_username'))
             author = get_or_create_user(data.get('author_username'))
             

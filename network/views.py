@@ -154,7 +154,7 @@ class SyncPullView(APIView):
     permission_classes = [permissions.AllowAny] # Local mesh traffic
 
     def get(self, request):
-        from profiles.models import WallPost, WallComment
+        from profiles.models import WallPost, WallComment, EMEUser
         from eme_chat.models import Message
         
         obj_type = request.query_params.get('type')
@@ -196,6 +196,17 @@ class SyncPullView(APIView):
                     'is_read': msg.is_read,
                     'created_at': msg.created_at.isoformat()
                 }
+        elif obj_type == 'user':
+            u = EMEUser.objects.filter(username=sync_id).first()
+            if u:
+                data = {
+                    'username': u.username,
+                    'first_name': u.first_name,
+                    'last_name': u.last_name,
+                    'bio': u.bio,
+                    'level': u.level,
+                    'points': u.points,
+                }
                 
         if not data:
             return Response({"error": "Not found"}, status=404)
@@ -207,7 +218,7 @@ class SyncCatchupView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        from profiles.models import WallPost, WallComment
+        from profiles.models import WallPost, WallComment, EMEUser
         from eme_chat.models import Message
         from datetime import datetime
         
@@ -215,6 +226,20 @@ class SyncCatchupView(APIView):
         since_dt = datetime.fromtimestamp(since_ts)
         items = []
         
+        # Users
+        for u in EMEUser.objects.filter(date_joined__gt=since_dt):
+            items.append({
+                'type': 'user',
+                'data': {
+                    'username': u.username,
+                    'first_name': u.first_name,
+                    'last_name': u.last_name,
+                    'bio': u.bio,
+                    'level': u.level,
+                    'points': u.points,
+                }
+            })
+
         # WallPosts
         for post in WallPost.objects.filter(created_at__gt=since_dt):
             items.append({
