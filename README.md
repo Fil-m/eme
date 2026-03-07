@@ -1,6 +1,6 @@
 # EME OS — Integrated Life & Work Management System
 
-**EME OS** is a powerful, self-hosted platform designed for neurodivergent individuals to manage projects, track tasks, and build a digital ecosystem. It features deep integration with local LLMs (Ollama) for intelligent scaffolding and automation.
+**EME OS** is a powerful, self-hosted platform designed for all to manage projects, track tasks, and build a digital ecosystem. It features deep integration with local LLMs (Ollama) for intelligent scaffolding and automation.
 
 ![EME OS UI](https://raw.githubusercontent.com/Fil-m/eme/main/static/css/screenshot_placeholder.png)
 
