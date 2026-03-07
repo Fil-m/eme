@@ -278,6 +278,7 @@ export default {
                         video.srcObject = stream;
                         video.setAttribute("playsinline", true);
                         video.play();
+                        this.cameraActive = true; // Set active immediately on stream start
                         if (this.scanInterval) clearInterval(this.scanInterval);
                         this.scanInterval = setInterval(this.processVideoFrame, 500);
                     }
@@ -318,7 +319,6 @@ export default {
 
                 if (code && code.data && code.data.trim() !== '') {
                     this.lastFound = code.data;
-                    this.qrInput = code.data;
                 }
                 this.isScanning = false;
             }

@@ -17,23 +17,28 @@ class Command(BaseCommand):
             dict(item_id='network',    icon='🌐', label='Мережа',        order=3, url='network', parent_id='social_group'),
 
             # SYSTEM
-            dict(item_id='projects',   icon='📋', label='Проєкти',       order=11, url='projects', parent_id='system_group'),
+            dict(item_id='projects',     icon='📋', label='Проєкти',       order=11, url='projects',     parent_id='system_group'),
+            dict(item_id='kb',           icon='📚', label='База Знань',    order=12, url='kb',           parent_id='system_group'),
+            dict(item_id='clone_master', icon='📦', label='Клон Мастер',   order=13, url='clone_master', parent_id='system_group'),
 
             # APPS
-            dict(item_id='apps_store', icon='🏪', label='Магазин',       order=21, url='apps_store', parent_id='apps_group'),
+            dict(item_id='apps_store',      icon='🏪', label='Магазин',       order=21, url='apps_store',      parent_id='apps_group'),
+            dict(item_id='park_adventures', icon='🏹', label='Парк Пригод',   order=22, url='park_adventures', parent_id='apps_group'),
+            dict(item_id='qr_generator',    icon='🤳', label='Генератор QR',  order=23, url='qr_generator',    parent_id='apps_group'),
         ]
 
-        # First, clear extra items not in this list to keep it clean
-        valid_ids = [d['item_id'] for d in items]
-        NavItem.objects.exclude(item_id__in=valid_ids).delete()
+        # We no longer delete excluded items to allow manual additions
+        # valid_ids = [d['item_id'] for d in items]
+        # NavItem.objects.exclude(item_id__in=valid_ids).delete()
 
         count = 0
-        # Map item_id to database objects for parent links
         lookup = {}
         
         # Two passes: first for parents, then for children
         for d in sorted(items, key=lambda x: 0 if x['parent_id'] is None else 1):
             parent = lookup.get(d['parent_id']) if d.get('parent_id') else None
+            
+            # Check if exists to avoid mangling existing manual data if not needed
             obj, created = NavItem.objects.update_or_create(
                 item_id=d['item_id'], 
                 defaults={
@@ -47,6 +52,7 @@ class Command(BaseCommand):
             lookup[d['item_id']] = obj
             count += 1
             action = 'Created' if created else 'Updated'
-            self.stdout.write(self.style.SUCCESS(f'{action} nav item: {obj.label}'))
+            # Using simple ASCII for logging to avoid terminal encoding errors
+            self.stdout.write(self.style.SUCCESS(f'{action} nav item: {d["item_id"]}'))
 
         self.stdout.write(self.style.SUCCESS(f'Successfully seeded {count} nav items'))

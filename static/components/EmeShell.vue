@@ -7,18 +7,15 @@
                     <div class="logo-inner">E</div>
                 </div>
 
-                <div class="nav-groups-wrapper">
-                    <div v-for="group in structuredNav" :key="group.item_id" class="nav-group">
-                        <div class="nav-group-title">{{ group.label }}</div>
-                        
-                        <button v-for="item in group.children" :key="item.item_id" class="eme-nav-btn"
-                            :class="{active: activeApp === item.item_id}" :title="item.label"
-                            @click="openApp(item.item_id)">
-                            <div class="btn-indicator"></div>
-                            <span class="nav-icon">{{ item.icon }}</span>
-                            <span class="nav-label">{{ item.label }}</span>
-                        </button>
-                    </div>
+                <div class="nav-items-wrapper">
+                    <button v-for="item in structuredNav" :key="item.item_id" class="eme-nav-btn"
+                        :class="{ 'active': isActive(item) }" 
+                        @click="handleAppClick(item)"
+                        :title="item.label">
+                        <div class="btn-indicator"></div>
+                        <span class="nav-icon">{{ item.icon }}</span>
+                        <span class="nav-label">{{ (item.label || '').slice(0, 8) }}</span>
+                    </button>
                 </div>
 
                 <div class="mt-auto pb-4">
@@ -32,15 +29,6 @@
 
         <!-- COLUMN 3: MAIN CONTENT AREA -->
         <div class="eme-main-col" :class="{'no-padding': isFullscreenApp}">
-            <!-- Empty desktop -->
-            <transition name="fade">
-                <div v-if="!activeApp" class="eme-empty">
-                    <div class="big-logo">EME</div>
-                    <p class="mt-3 text-muted">Оберіть розділ у навігації</p>
-                    <div class="status-dot"></div>
-                </div>
-            </transition>
-
             <!-- Dynamic Content Slot -->
             <transition name="page" mode="out-in">
                 <div :key="activeApp || 'empty'" class="page-wrapper">
@@ -53,24 +41,43 @@
 
 <script>
 export default {
-    props: ['navItems', 'activeApp'],
+    props: ['navItems', 'activeApp', 'systemSettings', 'customApps'],
     computed: {
         isFullscreenApp() {
-            const full = ['kb', 'projects', 'chat', 'clone_master', 'park_adventures'];
+            const full = ['kb', 'projects', 'chat', 'clone_master', 'park_adventures', 'mafia'];
             return full.includes(this.activeApp);
         },
         structuredNav() {
-            // Use the hierarchical structure provided by the backend (NavItemSerializer.children)
-            // We filter for root items (parent === null) and let the template render their children
-            if (!Array.isArray(this.navItems)) return [];
-            return this.navItems
-                .filter(i => i.parent === null)
-                .sort((a, b) => a.order - b.order);
+            return [
+                { item_id: 'desktop', label: 'Робочий стіл', icon: '🖥️' },
+                { item_id: 'apps_store', label: 'Додатки', icon: '🛍️' },
+                { item_id: 'settings', label: 'Налаштування', icon: '⚙️' }
+            ];
         }
     },
     methods: {
         openApp(appId) {
             this.$emit('update:activeApp', appId);
+        },
+        isActive(item) {
+            if (this.activeApp && typeof this.activeApp === 'object') {
+                if (item.isCustomApp && item.appData) {
+                    return this.activeApp.id === item.appData.id;
+                }
+                return false;
+            }
+            if (!this.activeApp && item.item_id === 'desktop') return true;
+            return this.activeApp === item.item_id;
+        },
+        handleAppClick(item) {
+            if (item.isCustomApp && item.appData) {
+                const customAppObj = Object.assign({ type: 'custom_app' }, item.appData);
+                this.openApp(customAppObj);
+            } else if (item.item_id === 'desktop') {
+                this.openApp(null);
+            } else {
+                this.openApp(item.item_id);
+            }
         }
     }
 }

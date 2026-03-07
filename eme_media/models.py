@@ -5,7 +5,7 @@ import uuid
 
 class Collection(models.Model):
     sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='collections')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='collections', db_constraint=False)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
@@ -33,7 +33,7 @@ class MediaFile(models.Model):
         FRIENDS = 'friends', 'Для друзів'
         PUBLIC = 'public', 'Для всіх'
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='media_files')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='media_files', db_constraint=False)
     file = models.FileField(upload_to='uploads/%Y/%m/%d/', blank=True, null=True)
     collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True, related_name='files')
     file_path = models.CharField(max_length=1024, blank=True, null=True)

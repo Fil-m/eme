@@ -28,7 +28,7 @@ class Project(models.Model):
         ('community', '🤝 Спільнота'),
     ]
 
-    owner = models.ForeignKey('profiles.EMEUser', on_delete=models.CASCADE, related_name='projects')
+    owner = models.ForeignKey('profiles.EMEUser', on_delete=models.CASCADE, related_name='projects', db_constraint=False)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     emoji = models.CharField(max_length=10, default='📋')
@@ -70,7 +70,7 @@ class ProjectMember(models.Model):
     """User assigned to a project with a specific role"""
     sync_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='members')
-    user = models.ForeignKey('profiles.EMEUser', on_delete=models.CASCADE, related_name='project_memberships')
+    user = models.ForeignKey('profiles.EMEUser', on_delete=models.CASCADE, related_name='project_memberships', db_constraint=False)
     role = models.ForeignKey(ProjectRole, on_delete=models.SET_NULL, null=True, blank=True, related_name='members')
     joined_at = models.DateTimeField(auto_now_add=True)
 

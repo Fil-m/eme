@@ -20,7 +20,7 @@ class AIRequest(models.Model):
     ]
 
     user = models.ForeignKey(EMEUser, on_delete=models.SET_NULL, null=True, blank=True,
-                             related_name='ai_requests')
+                             related_name='ai_requests', db_constraint=False)
     module = models.CharField(max_length=50, choices=MODULE_CHOICES, default='generic')
     provider = models.CharField(max_length=50, default='ollama')
     model = models.CharField(max_length=100, default='llama3')

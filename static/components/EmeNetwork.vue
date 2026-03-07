@@ -15,13 +15,24 @@
                 <a class="nav-link" :class="{active: networkTab==='chat'}" href="#"
                     @click.prevent="networkTab='chat'; loadChatRooms()">💬 Чат</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" :class="{active: networkTab==='share'}" href="#"
+                    @click.prevent="networkTab='share'">🚀 Mesh Sharing</a>
+            </li>
         </ul>
 
         <!-- TAB: Users -->
         <div v-if="networkTab==='users'">
             <div class="mb-3 d-flex justify-content-between align-items-center">
-                <input type="text" class="form-control" style="max-width:300px;" v-model="networkSearch"
-                    placeholder="🔍 Пошук учасників...">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="text" class="form-control" style="max-width:250px;" v-model="networkSearch"
+                        placeholder="🔍 Пошук учасників...">
+                    <div v-if="myIp" class="badge bg-dark-lt border border-primary px-3 py-2" 
+                         style="cursor: pointer;" title="Натисніть, щоб створити QR-код"
+                         @click="$emit('generate-qr', myIp)">
+                        📡 Ваша IP: <span class="text-primary fw-bold ms-1">{{ myIp }}</span>
+                    </div>
+                </div>
                 <button class="btn btn-sm btn-ghost-info" @click="fetchNetworkUsers" :disabled="loading">
                     <i class="ti ti-refresh" :class="{'ti-spin': loading}"></i> Оновити
                 </button>
@@ -145,6 +156,56 @@
                     </div>
                 </div>
             </div>
+        <!-- TAB: Share -->
+        <div v-if="networkTab==='share'">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center py-4">
+                            <div class="avatar avatar-xl bg-primary-lt mb-3">🚀</div>
+                            <h3 class="mb-1">Запросити друзів</h3>
+                            <p class="text-muted small">Поділіться доступом до вашого вузла через локальну мережу або Hotspot.</p>
+                            
+                            <div class="mt-4 p-3 bg-dark-lt border border-dashed border-primary rounded-3">
+                                <div class="fw-bold text-primary mb-2">Ваша локальна посилання:</div>
+                                <code class="d-block mb-3" style="font-size: 1.1rem;">http://{{ myIp }}:8000</code>
+                                <button class="btn btn-primary w-100" @click="$emit('generate-qr', 'http://' + myIp + ':8000')">
+                                    <i class="ti ti-qrcode me-2"></i> Показати QR-код
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center py-4">
+                            <div class="avatar avatar-xl bg-info-lt mb-3">📱</div>
+                            <h3 class="mb-1">Поширити APK</h3>
+                            <p class="text-muted small">Передайте файл встановлення EME OS прямо з вашого пристрою без інтернету.</p>
+                            
+                            <div class="mt-4">
+                                <a href="/api/network/apk-download/" class="btn btn-info w-100 mb-2" download>
+                                    <i class="ti ti-download me-2"></i> Завантажити EME_OS.apk
+                                </a>
+                                <div class="text-muted" style="font-size: 11px;">
+                                    Файл зберігається локально на вашому вузлі та готовий до передачі.
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-top">
+                                <div class="subheader mb-2">Як це працює?</div>
+                                <ul class="text-start small text-muted">
+                                    <li>Увімкніть Wi-Fi Hotspot на телефоні.</li>
+                                    <li>Друзі підключаються до вашого Wi-Fi.</li>
+                                    <li>Вони заходять на <code>http://{{ myIp }}:8000</code>.</li>
+                                    <li>Завантажують APK та стають частиною Mesh!</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -163,7 +224,8 @@ export default {
             messages: [],
             newMessage: '',
             chatPolling: null,
-            loading: false
+            loading: false,
+            myIp: null
         }
     },
     computed: {
@@ -190,6 +252,7 @@ export default {
                 const data = await res.json();
                 this.networkUsers = data.users || [];
                 this.externalNodes = data.external_nodes || [];
+                this.myIp = data.my_ip || '127.0.0.1';
             } catch (e) { }
             finally { this.loading = false; }
         },

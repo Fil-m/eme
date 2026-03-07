@@ -18,8 +18,15 @@ urlpatterns = [
     path('api/kb/', include('eme_kb.urls')),
     path('api/chat/', include('eme_chat.urls')),
     path('api/game/', include('park_adventures.urls')),
+    path('api/mafia/', include('eme_mafia.urls')),
+    path('api/utils/', include('eme_utils.urls')),
     # Simple project detail page
     path('p/<int:pk>/', ProjectPageView.as_view(), name='project-page'),
+    
+    # PWA Support
+    path('manifest.json', TemplateView.as_view(template_name='manifest.json', content_type='application/json'), name='manifest'),
+    path('sw.js', TemplateView.as_view(template_name='sw.js', content_type='application/javascript'), name='sw'),
+    
     # Entry point for the SPA
     path('', TemplateView.as_view(template_name='index.html'), name='index'),
 ]

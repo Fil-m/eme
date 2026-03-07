@@ -56,6 +56,20 @@
                     <div v-if="error" class="alert alert-danger mt-3 py-2 mb-0" style="font-size:13px;">
                         {{ error }}
                     </div>
+
+                    <!-- Install Prompt (PWA) -->
+                    <div class="mt-4 pt-3 border-top border-secondary text-center">
+                        <p class="text-muted small mb-2">📱 Користуєтесь мобільним?</p>
+                        <button class="btn btn-sm btn-outline-info w-100 mb-1" @click="promptInstall" v-if="deferredPrompt">
+                            Встановити додаток EME OS
+                        </button>
+                        <a href="/api/network/apk-download/" class="btn btn-sm btn-outline-success w-100 mb-1" download v-else>
+                            Завантажити EME_OS.apk
+                        </a>
+                        <p class="text-muted" style="font-size: 11px; line-height: 1.3;">
+                            Для кращого досвіду додайте сайт на Головний екран або завантажте APK.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -110,8 +124,15 @@ export default {
                 username: '',
                 password: '',
                 first_name: ''
-            }
+            },
+            deferredPrompt: null
         }
+    },
+    mounted() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+        });
     },
     methods: {
         switchMode(isLogin) {
@@ -168,6 +189,15 @@ export default {
             } catch (e) {
             } finally {
                 this.loading = false;
+            }
+        },
+        async promptInstall() {
+            if (this.deferredPrompt) {
+                this.deferredPrompt.prompt();
+                const { outcome } = await this.deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    this.deferredPrompt = null;
+                }
             }
         }
     }

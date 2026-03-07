@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     'eme_kb',
     'eme_chat',
     'park_adventures',
+    'eme_mafia',
+    'eme_utils',
     'sslserver',
 ]
 
@@ -71,8 +73,42 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'kb': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'kb.sqlite3',
+    },
+    'media': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'media.sqlite3',
+    },
+    'ai': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'ai.sqlite3',
+    },
+    'kanban': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'kanban.sqlite3',
+    },
+    'game': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'game.sqlite3',
+    },
+    'social': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'social.sqlite3',
+    },
+    'mafia': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'mafia.sqlite3',
+    },
+    'utils': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'utils.sqlite3',
     }
 }
+
+DATABASE_ROUTERS = ['eme.db_router.ModuleRouter']
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

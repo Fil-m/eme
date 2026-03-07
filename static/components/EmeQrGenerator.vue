@@ -50,7 +50,7 @@
 const QR_SCRIPT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 
 export default {
-    props: ['user', 'auth'],
+    props: ['user', 'auth', 'initialText'],
     emits: ['close'],
     data() {
         return {
@@ -99,8 +99,12 @@ export default {
             link.click();
         }
     },
-    mounted() {
-        this.loadLibrary();
+    async mounted() {
+        await this.loadLibrary();
+        if (this.initialText) {
+            this.text = this.initialText;
+            this.generateQR();
+        }
     }
 }
 </script>

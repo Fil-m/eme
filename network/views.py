@@ -67,6 +67,7 @@ class MeshDiscoveryView(APIView):
         node_data = NodeSerializer(nodes, many=True).data
 
         return Response({
+            'my_ip': request.META.get('REMOTE_ADDR', '127.0.0.1'),
             'users': user_data,
             'nodes': node_data,
             'external_nodes': external_nodes,
@@ -558,3 +559,18 @@ class SyncCatchupView(APIView):
             })
 
         return Response({"items": items})
+
+
+class DownloadAPKView(APIView):
+    """Serve the EME_OS.apk for download."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        import os
+        from django.http import FileResponse
+        from django.conf import settings
+        
+        apk_path = os.path.join(settings.BASE_DIR, 'static', 'EME_OS.apk')
+        if os.path.exists(apk_path):
+            return FileResponse(open(apk_path, 'rb'), as_attachment=True, filename='EME_OS.apk')
+        return Response({"error": "APK file not found"}, status=404)

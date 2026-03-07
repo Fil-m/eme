@@ -7,6 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EME OS</title>
 
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/eme-logo.svg">
+    <meta name="theme-color" content="#000000">
+
     <!-- Tabler CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
     <!-- Tabler Icons -->
@@ -47,6 +52,16 @@
             -webkit-text-fill-color: transparent;
         }
     </style>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch((err) => {
+                    console.log('SW Registration Failed: ', err);
+                });
+            });
+        }
+    </script>
 </head>
 
 <body class="antialiased">
@@ -57,7 +72,12 @@
             @authenticated="loadInitialData" @success="view = 'shell'"></eme-auth-screen>
 
         <!-- SCREEN: SHELL -->
-        <eme-shell v-if="view === 'shell'" :nav-items="navItems" v-model:active-app="activeApp" @logout="logout">
+        <eme-shell-main v-if="view === 'shell'" :nav-items="navItems" :system-settings="systemSettings"
+            :custom-apps="customApps" v-model:active-app="activeApp" @logout="logout">
+            <!-- DASHBOARD (Shows when no active app) -->
+            <eme-dashboard v-show="!activeApp" :user="user" :auth="auth" :nav-items="navItems"
+                @open-app="activeApp = $event"></eme-dashboard>
+
             <!-- APP MODULES -->
             <eme-apps-store v-if="activeApp === 'apps_store'" :user="user" :auth="auth"
                 @close="activeApp = null"></eme-apps-store>
@@ -70,10 +90,12 @@
                 @return="visitingUser = null" @close="activeApp = null"></eme-gallery>
 
             <eme-network v-if="activeApp === 'network'" :user="user" :auth="auth" @visit-user="visitUser"
+                @generate-qr="qrInitialText = $event; activeApp = 'qr_generator'"
                 @close="activeApp = null"></eme-network>
 
             <eme-settings v-if="activeApp === 'settings'" v-model:user="user" v-model:system-settings="systemSettings"
-                :auth="auth" @refresh-user="loadInitialData" @close="activeApp = null"></eme-settings>
+                :auth="auth" :nav-items="navItems" @refresh-user="loadInitialData"
+                @close="activeApp = null"></eme-settings>
 
             <eme-projects v-if="activeApp === 'projects'" :user="user" :auth="auth"
                 @close="activeApp = null"></eme-projects>
@@ -88,7 +110,7 @@
             <eme-chat v-if="activeApp === 'chat'" :user="user" :auth="auth" @close="activeApp = null"></eme-chat>
 
             <eme-qr-generator v-if="activeApp === 'qr_generator'" :user="user" :auth="auth"
-                @close="activeApp = null"></eme-qr-generator>
+                :initial-text="qrInitialText" @close="activeApp = null; qrInitialText = ''"></eme-qr-generator>
 
             <eme-park-adventures v-if="activeApp === 'park_adventures'" :user="user" :auth="auth"
                 @close="activeApp = null"></eme-park-adventures>
@@ -96,7 +118,38 @@
             <eme-park-adventures-admin v-if="activeApp === 'park_adventures_admin'" :user="user"
                 :auth="auth"></eme-park-adventures-admin>
 
-        </eme-shell>
+            <eme-mafia v-if="activeApp === 'mafia'" :user="user" :auth="auth" @close="activeApp = null"></eme-mafia>
+
+            <eme-omni-tools v-if="activeApp === 'omni_tools'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-omni-tools>
+
+            <eme-microbin v-if="activeApp === 'microbin'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-microbin>
+
+            <eme-bookmarks v-if="activeApp === 'bookmarks'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-bookmarks>
+
+            <eme-memos v-if="activeApp === 'memos'" :user="user" :auth="auth" @close="activeApp = null"></eme-memos>
+
+            <eme-sys-mon v-if="activeApp === 'sysmon'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-sys-mon>
+
+            <eme-open-web-ui v-if="activeApp === 'open_webui'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-open-web-ui>
+
+            <eme-vikunja v-if="activeApp === 'vikunja'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-vikunja>
+
+            <eme-syncthing v-if="activeApp === 'syncthing'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-syncthing>
+
+            <!-- DYNAMIC MODULAR APPS -->
+            <eme-modular-app v-if="activeApp && typeof activeApp === 'object' && activeApp.type === 'custom_app'"
+                :user="user" :auth="auth" :app-config="activeApp" :system-settings="systemSettings"
+                @visit-user="visitUser" @generate-qr="qrInitialText = $event; activeApp = 'qr_generator'"
+                @close="activeApp = null"></eme-modular-app>
+
+        </eme-shell-main>
     </div>
 
     <script>
@@ -107,13 +160,17 @@
         const loaderOptions = {
             moduleCache: { vue: Vue },
             async getFile(url) {
-                // Keep the original URL for identifier check, but fetch with cache buster
                 const finalUrl = url.includes('?') ? `${url}&v=${appVersion}` : `${url}?v=${appVersion}`;
-                const res = await fetch(finalUrl);
-                if (!res.ok) throw Object.assign(new Error(res.statusText + ' ' + finalUrl), { res });
-                return {
-                    getContentData: (asBinary) => asBinary ? res.arrayBuffer() : res.text(),
-                };
+                try {
+                    const res = await fetch(finalUrl);
+                    if (!res.ok) throw Object.assign(new Error(res.statusText + ' ' + finalUrl), { res });
+                    return {
+                        getContentData: (asBinary) => asBinary ? res.arrayBuffer() : res.text(),
+                    };
+                } catch (e) {
+                    alert(`VUE LOADER ERROR: Не вдалося завантажити файл ${finalUrl}. Якщо у вас увімкнений блокувальник реклами (AdBlock), він міг заблокувати слово 'chat'.`);
+                    throw e;
+                }
             },
             addStyle(textContent) {
                 const style = document.createElement('style');
@@ -130,9 +187,11 @@
                     user: {},
                     navItems: [],
                     systemSettings: {},
-                    activeApp: null,
+                    customApps: [],
+                    activeApp: 'apps_store',
                     kbArticleId: null,
-                    visitingUser: null
+                    visitingUser: null,
+                    qrInitialText: ''
                 }
             },
             methods: {
@@ -143,10 +202,11 @@
                 },
                 async loadInitialData() {
                     try {
-                        const [uRes, navRes, setRes] = await Promise.all([
+                        const [uRes, navRes, setRes, appsRes] = await Promise.all([
                             fetch('/api/profiles/me/', { headers: this.auth() }),
                             fetch('/api/nav/items/', { headers: this.auth() }),
-                            fetch('/api/settings/me/', { headers: this.auth() })
+                            fetch('/api/settings/me/', { headers: this.auth() }),
+                            fetch('/api/settings/apps/', { headers: this.auth() })
                         ]);
 
                         if (uRes.status === 401 || navRes.status === 401 || setRes.status === 401) {
@@ -161,8 +221,11 @@
                         const navData = await navRes.json();
                         this.navItems = navData.results || navData;
                         this.systemSettings = await setRes.json();
+                        const appsData = await appsRes.json();
+                        this.customApps = appsData.results || appsData;
                     } catch (e) {
                         console.error('Data load error', e);
+                        alert("Критична помилка завантаження даних EME OS: " + e.message);
                     }
                 },
                 async logout() {
@@ -205,9 +268,11 @@
 
         // Register components
         const components = [
-            'EmeAuthScreen', 'EmeShell', 'EmeMyPage', 'EmeAppsStore',
+            'EmeAuthScreen', 'EmeShellMain', 'EmeDashboard', 'EmeWidgetClock', 'EmeAppsStore',
             'EmeGallery', 'EmeNetwork', 'EmeSettings', 'EmeProjects', 'EmeCloneMaster',
-            'EmeProjectDetail', 'EmeKb', 'EmeChat', 'EmeQrGenerator', 'EmeParkAdventures', 'EmeParkAdventuresAdmin'
+            'EmeProjectDetail', 'EmeKb', 'EmeChat', 'EmeQrGenerator', 'EmeParkAdventures', 'EmeParkAdventuresAdmin', 'EmeMafia',
+            'EmeOmniTools', 'EmeMicrobin', 'EmeBookmarks', 'EmeMemos', 'EmeSysMon',
+            'EmeOpenWebUI', 'EmeVikunja', 'EmeSyncthing', 'EmeModularApp', 'EmeProfile', 'EmeIndexer', 'EmeAIBuilder', 'EmeUserwalllight'
         ];
 
         components.forEach(name => {

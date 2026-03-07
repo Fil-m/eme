@@ -197,17 +197,17 @@ export default {
         },
         filteredArticles() {
             let list = this.articles;
-            if (this.activeCategoryId !== null) {
+            if (this.activeCategoryId) {
                 list = list.filter(a => a.category === this.activeCategoryId);
             }
-            if (this.searchQuery.trim()) {
-                const sq = this.searchQuery.toLowerCase();
+            if (this.searchQuery) {
+                const q = this.searchQuery.toLowerCase();
                 list = list.filter(a => 
-                    a.title.toLowerCase().includes(sq) || 
-                    a.content.toLowerCase().includes(sq) ||
-                    (a.tags && a.tags.toLowerCase().includes(sq))
+                    a.title.toLowerCase().includes(q) || 
+                    a.content.toLowerCase().includes(q)
                 );
             }
+            return list;
         },
         formattedContent() {
             if (!this.selectedArticle || !this.selectedArticle.content) return '';

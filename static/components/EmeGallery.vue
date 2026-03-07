@@ -13,8 +13,7 @@
             <div class="d-flex align-items-center gap-3">
                 <h1 class="eme-app-title">Галерея</h1>
                 <div class="nav nav-tabs border-0 mt-1">
-                    <button class="nav-link bg-transparent border-0 px-2" :class="{active: currentTab==='gallery'}" @click="currentTab='gallery'">Медіатека</button>
-                    <button v-if="!visitingUser" class="nav-link bg-transparent border-0 px-2" :class="{active: currentTab==='explorer'}" @click="currentTab='explorer'">Провідник Ноди</button>
+                    <button class="nav-link bg-transparent border-0 px-2 active">Медіатека</button>
                 </div>
             </div>
             <div class="d-flex gap-2">
@@ -56,35 +55,6 @@
                         <button class="btn btn-link link-secondary"
                             @click="showNewCollectionModal=false">Скасувати</button>
                         <button class="btn btn-primary" @click="createCollection" :disabled="!newCollectionName">Створити</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div v-if="!visitingUser && currentTab === 'gallery'" class="row g-3 mb-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between">
-                        <strong class="small uppercase text-muted">Завантаження</strong>
-                    </div>
-                    <div class="card-body py-3">
-                        <label class="btn btn-outline-primary w-100 mb-0 d-flex align-items-center justify-content-center gap-2">
-                            <span>📂 Обрати файли...</span>
-                            <input type="file" multiple class="d-none" @change="uploadFiles">
-                        </label>
-                        <div class="text-center mt-2 small text-muted d-none d-md-block">або перетягніть сюди</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header"><strong class="small uppercase text-muted">Індексація (Local Path)</strong></div>
-                    <div class="card-body py-3">
-                        <div class="input-group">
-                            <input type="text" class="form-control form-control-sm"
-                                placeholder="D:\media\video.mp4" v-model="localFilePath" @keyup.enter="indexLocalFile">
-                            <button class="btn btn-sm btn-primary" @click="indexLocalFile">OK</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -174,52 +144,6 @@
             </div>
         </div>
 
-        <!-- EXPLORER TAB -->
-        <div v-if="currentTab === 'explorer'" class="eme-explorer">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2 text-truncate">
-                        <strong class="small uppercase text-muted">Шлях:</strong>
-                        <span class="font-monospace small text-primary text-truncate">{{ explorerPath }}</span>
-                    </div>
-                    <button class="btn btn-sm btn-outline-secondary" @click="fetchExplorer('..')">Вгору ↑</button>
-                </div>
-                <div class="table-responsive" style="max-height:600px;">
-                    <table class="table table-vcenter table-nowrap card-table">
-                        <thead>
-                            <tr>
-                                <th>Назва</th>
-                                <th class="w-1">Розмір</th>
-                                <th class="w-1">Дія</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="!explorerItems.length">
-                                <td colspan="3" class="text-center py-4 text-muted small">
-                                    Папка порожня або доступ заборонено
-                                </td>
-                            </tr>
-                            <tr v-for="(item, idx) in explorerItems" :key="idx">
-                                <td @click="item.is_dir ? fetchExplorer(item.path) : null" :style="item.is_dir ? 'cursor:pointer' : ''">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span>{{ item.is_dir ? '📁' : '📄' }}</span>
-                                        <span :class="{'fw-bold': item.is_dir}">{{ item.name }}</span>
-                                    </div>
-                                </td>
-                                <td class="text-muted small">
-                                    {{ item.is_dir ? '-' : (item.size / 1024 / 1024).toFixed(2) + ' MB' }}
-                                </td>
-                                <td>
-                                    <button v-if="!item.is_dir" class="btn btn-sm btn-outline-primary"
-                                        @click="indexExploredFile(item)">Індексувати</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
         <!-- Lightbox -->
         <div v-if="lightboxMedia" class="modal modal-blur fade show d-block"
             style="background: rgba(0,0,0,0.8); z-index: 9999;" @click.self="lightboxMedia = null">
@@ -262,10 +186,7 @@ export default {
             localFilePath: '',
             showNewCollectionModal: false,
             newCollectionName: '',
-            lightboxMedia: null,
-            currentTab: 'gallery',
-            explorerPath: '',
-            explorerItems: []
+            lightboxMedia: null
         }
     },
     mounted() {
@@ -276,11 +197,6 @@ export default {
         this.fetchFiles();
     },
     watch: {
-        currentTab(val) {
-            if (val === 'explorer' && !this.explorerItems.length) {
-                this.fetchExplorer();
-            }
-        },
         activeCollection() {
             this.fetchFiles();
         },
@@ -326,83 +242,6 @@ export default {
                     this.fetchFiles();
                 }
             } catch (e) { }
-        },
-        async uploadFiles(e) {
-            const files = e.target.files;
-            if (!files.length) return;
-            const formData = new FormData();
-            for (let f of files) formData.append('files', f);
-            if (this.activeCollection) formData.append('collection', this.activeCollection.id);
-
-            try {
-                const res = await fetch('/api/media/files/bulk-upload/', {
-                    method: 'POST',
-                    headers: this.auth(),
-                    body: formData
-                });
-                if (res.ok) this.fetchFiles();
-            } catch (e) { }
-        },
-        async indexLocalFile() {
-            if (!this.localFilePath) return;
-            try {
-                const res = await fetch('/api/media/files/index-local/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...this.auth() },
-                    body: JSON.stringify({
-                        file_path: this.localFilePath,
-                        visibility: 'public',
-                        collection: this.activeCollection ? this.activeCollection.id : null
-                    })
-                });
-                if (res.ok) {
-                    this.localFilePath = '';
-                    this.fetchFiles();
-                    alert('Файл успішно індексовано!');
-                } else {
-                    const error = await res.json();
-                    let msg = 'Помилка індексації: ' + (error.error || res.statusText);
-                    if (error.tried_path) msg += '\nШлях: ' + error.tried_path;
-                    alert(msg);
-                }
-            } catch (e) {
-                alert('Помилка мережі при спробі індексації: ' + e);
-            }
-        },
-        async fetchExplorer(path = '') {
-            try {
-                let url = '/api/media/explorer/';
-                if (path) url += `?path=${encodeURIComponent(path)}`;
-                const res = await fetch(url, { headers: this.auth() });
-                const data = await res.json();
-                if (res.ok) {
-                    this.explorerPath = data.current_path;
-                    this.explorerItems = data.items;
-                }
-            } catch (e) { }
-        },
-        async indexExploredFile(item) {
-            try {
-                const res = await fetch('/api/media/files/index-local/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...this.auth() },
-                    body: JSON.stringify({
-                        file_path: item.path,
-                        visibility: 'public'
-                    })
-                });
-                if (res.ok) {
-                    alert(`Файл "${item.name}" успішно індексовано!`);
-                    this.fetchFiles();
-                } else {
-                    const error = await res.json();
-                    let msg = 'Помилка індексації: ' + (error.error || res.statusText);
-                    if (error.tried_path) msg += '\nШлях: ' + error.tried_path;
-                    alert(msg);
-                }
-            } catch (e) {
-                alert('Помилка мережі: ' + e);
-            }
         },
         async deleteFile(id) {
             if (!confirm('Видалити цей файл?')) return;

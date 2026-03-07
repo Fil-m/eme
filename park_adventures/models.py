@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 
 class Player(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='park_player')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='park_player', db_constraint=False)
     username = models.CharField(max_length=100)
     
     # Resources

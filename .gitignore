@@ -7,9 +7,15 @@ venv/
 
 # Django
 db.sqlite3
+*.sqlite3
 media/clones/*.zip
 media/previews/
 eme_media/previews/
+*.log
+nav_audit_*.json
+output.json
+out.log
+static/EME_OS.apk
 
 # System
 .DS_Store

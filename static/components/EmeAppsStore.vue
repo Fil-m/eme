@@ -100,6 +100,33 @@ export default {
                     developer: 'EME Utilities'
                 },
                 {
+                    id: 'projects',
+                    category: 'productivity',
+                    name: 'Проєкти',
+                    description: 'Керування завданнями, дошками та командами в стилі Kanban.',
+                    icon: '📊',
+                    color: '#206bc4',
+                    developer: 'EME Core'
+                },
+                {
+                    id: 'chat',
+                    category: 'productivity',
+                    name: 'Чат',
+                    description: 'Спілкування, обмін файлами та стікерами в реальному часі.',
+                    icon: '💬',
+                    color: '#00e5ff',
+                    developer: 'EME Core'
+                },
+                {
+                    id: 'mafia',
+                    category: 'games',
+                    name: 'Мафія',
+                    description: 'Психологічна гра. Створіть кімнату і визначте, хто вбиває містян!',
+                    icon: '🕵️‍♂️',
+                    color: '#dc3545',
+                    developer: 'EME Community'
+                },
+                {
                     id: 'kb',
                     category: 'productivity',
                     name: 'База Знань',
@@ -134,6 +161,78 @@ export default {
                     icon: '📦',
                     color: '#7048e8',
                     developer: 'EME Core'
+                },
+                {
+                    id: 'omni_tools',
+                    category: 'utils',
+                    name: 'OmniTools',
+                    description: 'Набір локальних інструментів розробника (JSON, Base64, UUID, Hashes).',
+                    icon: '🧰',
+                    color: '#ea868f',
+                    developer: 'EME Utilities'
+                },
+                {
+                    id: 'microbin',
+                    category: 'utils',
+                    name: 'EME Pastebin',
+                    description: 'Безпечний обмін текстовими сніпетами та кодом всередині мережі.',
+                    icon: '📋',
+                    color: '#206bc4',
+                    developer: 'EME Utilities'
+                },
+                {
+                    id: 'bookmarks',
+                    category: 'productivity',
+                    name: 'Закладки',
+                    description: 'Особистий менеджер закладок та веб-посилань (Linkding clone).',
+                    icon: '🔖',
+                    color: '#f76707',
+                    developer: 'EME Utilities'
+                },
+                {
+                    id: 'memos',
+                    category: 'productivity',
+                    name: 'Нотатки',
+                    description: 'Швидкі мікро-записи та нагадування.',
+                    icon: '📝',
+                    color: '#fcc419',
+                    developer: 'EME Utilities'
+                },
+                {
+                    id: 'sysmon',
+                    category: 'system',
+                    name: 'Системний Монітор',
+                    description: 'Моніторинг ресурсів сервера EME OS (CPU, RAM, Disk).',
+                    icon: '📈',
+                    color: '#0ca678',
+                    developer: 'EME Utilities'
+                },
+                {
+                    id: 'open_webui',
+                    category: 'productivity',
+                    name: 'Open WebUI',
+                    description: 'Повноцінний локальний інтерфейс для AI моделей (потребує Docker).',
+                    icon: '🧠',
+                    color: '#0d6efd',
+                    developer: 'External Integration'
+                },
+                {
+                    id: 'vikunja',
+                    category: 'productivity',
+                    name: 'Vikunja Tasks',
+                    description: 'Просунуте управління завданнями (потребує Docker).',
+                    icon: '✅',
+                    color: '#198754',
+                    developer: 'External Integration'
+                },
+                {
+                    id: 'syncthing',
+                    category: 'system',
+                    name: 'Syncthing Mesh',
+                    description: 'Пірингова синхронізація файлів між вузлами (потребує Docker).',
+                    icon: '🔄',
+                    color: '#6610f2',
+                    developer: 'External Integration'
                 }
             ]
         };
