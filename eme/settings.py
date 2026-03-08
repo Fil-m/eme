@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
+    # 'rest_framework_simplejwt.token_blacklist',  # Deactivated for mobile debugging due to migration issues
     'corsheaders',
     'profiles',
     'system_settings',
@@ -58,10 +58,10 @@ INSTALLED_APPS = [
     'park_adventures',
     'eme_mafia',
     'eme_utils',
-    'sslserver',
 ]
 
 MIDDLEWARE = [
+    'eme_utils.middleware.ExceptionLoggerMiddleware',  # Catcher for mobile diagnostics
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -188,7 +188,7 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    'BLACKLIST_AFTER_ROTATION': False,
 }
 
 CORS_ALLOW_ALL_ORIGINS = True

@@ -54,30 +54,32 @@
                 </div>
             </div>
 
-            <!-- Right Column: Editor preview -->
+            <!-- Right Column: Status / Info -->
             <div class="col-md-7 col-lg-8">
                 <div class="card h-100" v-if="selectedDraft">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="card-title m-0">Редактор: {{ selectedDraft.component_name }}.vue</h4>
+                        <h4 class="card-title m-0">Керування: {{ selectedDraft.component_name }}</h4>
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-danger" @click="deleteDraft(selectedDraft.id)">Видалити</button>
-                            <button class="btn btn-sm btn-primary" @click="saveDraftCode">💾 Зберегти код</button>
+                            <button class="btn btn-sm btn-primary" @click="openInEditor">📂 Відкрити в редакторі</button>
                             <button v-if="!selectedDraft.is_published" class="btn btn-sm btn-success" @click="publishDraft(selectedDraft.id)">🚀 Опублікувати</button>
                         </div>
                     </div>
-                    <div class="card-body p-0 d-flex flex-column">
-                        <div v-if="selectedDraft.is_published" class="alert alert-success m-3">
-                            ✅ Цей додаток вже опубліковано і доступний в системі! Ви можете знайти його в App Builder.
+                    <div class="card-body">
+                        <div v-if="selectedDraft.is_published" class="alert alert-success">
+                            ✅ Цей додаток вже опубліковано і доступний в системі!
                         </div>
-                        <textarea class="form-control border-0 font-monospace bg-dark text-light p-3 flex-grow-1" 
-                            style="resize: none; font-size: 13px; line-height: 1.5; min-height: 500px;" 
-                            v-model="editorCode"></textarea>
+                        <div class="p-4 text-center">
+                            <div style="font-size: 3rem;">🛠️</div>
+                            <h3 class="mt-3">Додаток готовий до редагування</h3>
+                            <p class="text-muted">Натисніть кнопку вище, щоб відкрити код у постійному редакторі. Він залишиться відкритим, навіть якщо ви перейдете в інше вікно.</p>
+                        </div>
                     </div>
                 </div>
                 <div v-else class="card h-100 bg-transparent border-0 d-flex align-items-center justify-content-center text-muted">
                     <div class="text-center">
                         <div style="font-size: 4rem; opacity: 0.5;">🪄</div>
-                        <p class="mt-3">Виберіть чернетку зліва або згенеруйте нову, щоб побачити код.</p>
+                        <p class="mt-3">Виберіть чернетку зліва або згенеруйте нову, щоб почати роботу.</p>
                     </div>
                 </div>
             </div>
@@ -115,7 +117,12 @@ export default {
         },
         selectDraft(draft) {
             this.selectedDraft = draft;
-            this.editorCode = draft.vue_code;
+            // No longer using local editorCode
+        },
+        openInEditor() {
+            if (!this.selectedDraft) return;
+            this.$root.editorDraftId = this.selectedDraft.id;
+            this.$root.isEditorOpen = true;
         },
         async generateApp() {
             this.isGenerating = true;
@@ -133,6 +140,7 @@ export default {
                     const newDraft = await res.json();
                     this.drafts.unshift(newDraft);
                     this.selectDraft(newDraft);
+                    this.openInEditor(); // Auto open after generation
                     this.newAppName = '';
                     this.newAppPrompt = '';
                 } else {
@@ -144,23 +152,6 @@ export default {
             }
             this.isGenerating = false;
         },
-        async saveDraftCode() {
-            if (!this.selectedDraft) return;
-            try {
-                const res = await fetch(`/api/settings/ai-drafts/${this.selectedDraft.id}/`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', ...this.auth() },
-                    body: JSON.stringify({ vue_code: this.editorCode })
-                });
-                if (res.ok) {
-                    const updated = await res.json();
-                    this.selectedDraft.vue_code = updated.vue_code;
-                    alert("Код збережено в чернетку!");
-                }
-            } catch (e) {
-                alert("Помилка збереження.");
-            }
-        },
         async deleteDraft(id) {
             if (!confirm("Ви впевнені, що хочете видалити цю розробку?")) return;
             try {
@@ -169,6 +160,9 @@ export default {
                     headers: this.auth()
                 });
                 if (res.ok) {
+                    if (this.$root.editorDraftId === id) {
+                        this.$root.isEditorOpen = false;
+                    }
                     this.selectedDraft = null;
                     this.fetchDrafts();
                 }
@@ -177,9 +171,6 @@ export default {
         async publishDraft(id) {
             if (!confirm("Опублікувати цей додаток? Він стане частиною EME OS.")) return;
             try {
-                // Save first just in case
-                await this.saveDraftCode();
-
                 const res = await fetch(`/api/settings/ai-builder/publish/${id}/`, {
                     method: 'POST',
                     headers: this.auth()

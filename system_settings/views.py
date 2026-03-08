@@ -1,7 +1,8 @@
 from django.conf import settings
 from rest_framework import generics, permissions
-from .models import CoreSettings
-from .serializers import CoreSettingsSerializer
+from .models import CoreSettings, UserAppLayout, AIDraftApp
+from .serializers import CoreSettingsSerializer, UserAppLayoutSerializer, AIDraftAppSerializer
+from .git_utils import push_app_to_git, auto_update_sync
 
 class CoreSettingsView(generics.RetrieveUpdateAPIView):
     serializer_class = CoreSettingsSerializer
@@ -195,3 +196,155 @@ class AppPublishView(APIView):
         draft.save()
 
         return Response({'message': 'Додаток успішно опубліковано!'})
+
+class AppDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            draft = AIDraftApp.objects.get(pk=pk, user=request.user)
+        except AIDraftApp.DoesNotExist:
+            return Response({'error': 'Додаток не знайдено'}, status=status.HTTP_404_NOT_FOUND)
+
+        # 1. Delete the .vue file
+        component_file_name = f"{draft.component_name}.vue"
+        file_path = os.path.join(settings.BASE_DIR, 'static', 'components', component_file_name)
+        
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                return Response({'error': f'Помилка видалення файлу: {str(e)}'}, status=500)
+
+        # 2. Optional: Remove from index.html registration?
+        # For now, we'll keep it simple. The component just won't load if the file is missing.
+        # But properly we should remove the string from components array.
+        
+        index_path = os.path.join(settings.BASE_DIR, 'templates', 'index.html')
+        try:
+            with open(index_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Remove from components array: 'EmeGeneratedStuff',
+            import re
+            pattern = re.compile(f"'{draft.component_name}',?\\s*")
+            new_content = pattern.sub('', content)
+            
+            with open(index_path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+        except:
+            pass # Non-critical if index.html update fails
+
+        # 3. Delete the draft record
+        draft.delete()
+
+        return Response({'message': 'Додаток успішно видалено!'})
+
+class AppListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # 1. Hardcoded core apps (from EmeAppsStore.vue)
+        core_apps = [
+            {'id': 'park_adventures', 'category': 'games', 'name': 'Парк', 'icon': '🐉', 'color': '#4ca528', 'description': 'Інтерактивна гра з QR-сканером.', 'developer': 'EME Community'},
+            {'id': 'qr_generator', 'category': 'utils', 'name': 'QR Генератор', 'icon': '🔍', 'color': '#00e5ff', 'description': 'Швидке створення QR-кодів.', 'developer': 'EME Utilities'},
+            {'id': 'projects', 'category': 'productivity', 'name': 'Проєкти', 'icon': '📊', 'color': '#206bc4', 'description': 'Kanban дошки.', 'developer': 'EME Core'},
+            {'id': 'chat', 'category': 'productivity', 'name': 'Чат', 'icon': '💬', 'color': '#00e5ff', 'description': 'Спілкування real-time.', 'developer': 'EME Core'},
+            {'id': 'mafia', 'category': 'games', 'name': 'Мафія', 'icon': '🕵️‍♂️', 'color': '#dc3545', 'description': 'Психологічна гра.', 'developer': 'EME Community'},
+            {'id': 'kb', 'category': 'productivity', 'name': 'База Знань', 'icon': '📚', 'color': '#f59f00', 'description': 'Нотатки та документація.', 'developer': 'EME Core'},
+            {'id': 'ai_builder', 'category': 'productivity', 'name': 'AI App Builder', 'icon': '🪄', 'color': '#00e5ff', 'description': 'Створення додатків AI.', 'developer': 'EME Core'},
+            {'id': 'gallery', 'category': 'media', 'name': 'Галерея', 'icon': '🖼️', 'color': '#e64980', 'description': 'Управління медіа.', 'developer': 'EME Core'},
+            {'id': 'settings', 'category': 'system', 'name': 'Налаштування', 'icon': '⚙️', 'color': '#495057', 'description': 'Конфігурація системи.', 'developer': 'EME Core'},
+            {'id': 'clone_master', 'category': 'system', 'name': 'Клон Мастер', 'icon': '📦', 'color': '#7048e8', 'description': 'Портативні клони.', 'developer': 'EME Core'},
+            {'id': 'omni_tools', 'category': 'utils', 'name': 'OmniTools', 'icon': '🧰', 'color': '#ea868f', 'description': 'Інструменти розробника.', 'developer': 'EME Utilities'},
+            {'id': 'microbin', 'category': 'utils', 'name': 'EME Pastebin', 'icon': '📋', 'color': '#206bc4', 'description': 'Обмін кодом.', 'developer': 'EME Utilities'},
+            {'id': 'bookmarks', 'category': 'productivity', 'name': 'Закладки', 'icon': '🔖', 'color': '#f76707', 'description': 'Менеджер посилань.', 'developer': 'EME Utilities'},
+            {'id': 'memos', 'category': 'productivity', 'name': 'Нотатки', 'icon': '📝', 'color': '#fcc419', 'description': 'Швидкі записи.', 'developer': 'EME Utilities'},
+            {'id': 'sysmon', 'category': 'system', 'name': 'Системний Монітор', 'icon': '📈', 'color': '#0ca678', 'description': 'Ресурси сервера.', 'developer': 'EME Utilities'},
+        ]
+
+        # 2. Dynamically find published AI apps in static/components
+        dynamic_apps = []
+        components_dir = os.path.join(settings.BASE_DIR, 'static', 'components')
+        if os.path.exists(components_dir):
+            for filename in os.listdir(components_dir):
+                if filename.startswith('EmeGenerated') and filename.endswith('.vue'):
+                    component_name = filename[:-4]
+                    # Find draft to get the original name
+                    draft = AIDraftApp.objects.filter(component_name=component_name).first()
+                    app_name = draft.name if draft else component_name.replace('EmeGenerated', '')
+                    
+                    dynamic_apps.append({
+                        'id': component_name.lower().replace('eme', 'eme-'), # Map to component tag logic
+                        'category': 'ai_apps',
+                        'name': app_name,
+                        'icon': '✨',
+                        'color': '#6c00ff',
+                        'description': 'AI генерував цей додаток.',
+                        'developer': 'You & AI',
+                        'component_name': component_name,
+                        'draft_id': draft.id if draft else None
+                    })
+
+        return Response(core_apps + dynamic_apps)
+
+class AppPreviewView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get('code')
+        name = request.data.get('name', 'PreviewComponent')
+        
+        if not code:
+            return Response({'error': 'No code provided'}, status=400)
+            
+        # Write to EmePreview.vue
+        preview_path = os.path.join(settings.BASE_DIR, 'static', 'components', 'EmePreview.vue')
+        try:
+            with open(preview_path, 'w', encoding='utf-8') as f:
+                f.write(code)
+            return Response({'success': True, 'component': 'EmePreview'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+class AppGitPushView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            draft = AIDraftApp.objects.get(pk=pk, user=request.user)
+        except AIDraftApp.DoesNotExist:
+            return Response({'error': 'Додаток не знайдено'}, status=404)
+
+        if not draft.is_published:
+            return Response({'error': 'Додаток мусить бути опублікований перед пушем у Git'}, status=400)
+
+        success, message = push_app_to_git(draft)
+        if success:
+            return Response({'message': message})
+        else:
+            return Response({'error': message}, status=500)
+
+from .update_utils import download_and_update_from_zip
+
+class GitAutoUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        settings_obj = CoreSettings.objects.filter(user=request.user).first()
+        if not settings_obj or not settings_obj.auto_update:
+            return Response({'error': 'Auto-Update вимкнено в налаштуваннях'}, status=400)
+
+        # Try standard git pull first (works on desktop)
+        success, out = auto_update_sync()
+        if success:
+            return Response({'message': 'Оновлення завершено через Git!', 'output': out})
+        
+        # If git pull fails (likely mobile or no .git), try ZIP update from GitHub
+        repo_url = "https://github.com/Fil-m/eme.git" # TODO: get from settings
+        success, out = download_and_update_from_zip(repo_url)
+        
+        if success:
+            return Response({'message': 'Оновлення завершено через ZIP!', 'output': out})
+        else:
+            return Response({'error': f'Помилка оновлення: {out}'}, status=500)

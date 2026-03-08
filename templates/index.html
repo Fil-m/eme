@@ -13,19 +13,21 @@
     <meta name="theme-color" content="#000000">
 
     <!-- Tabler CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
+    <link rel="stylesheet" href="/static/libs/tabler/tabler.min.css">
     <!-- Tabler Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-    <!-- Inter font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <link rel="stylesheet" href="/static/libs/tabler/tabler-icons.min.css">
+    <!-- Fonts -->
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+    </style>
     <!-- Vue 3 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="/static/libs/vue.global.js"></script>
     <!-- Vue3 SFC Loader -->
-    <script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader@0.8.4/dist/vue3-sfc-loader.js"></script>
+    <script src="/static/libs/vue3-sfc-loader.js"></script>
     <!-- jsQR for QR Code scanning -->
-    <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+    <script src="/static/libs/jsQR.js"></script>
 
     <style>
         :root {
@@ -54,6 +56,15 @@
     </style>
 
     <script>
+        // GLOBAL ERROR CATCHER FOR MOBILE
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            alert("JS ERROR: " + msg + "\nURL: " + url + "\nLine: " + lineNo);
+            return false;
+        };
+        window.onunhandledrejection = function (event) {
+            alert("PROMISE REJECTION: " + event.reason);
+        };
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js').catch((err) => {
@@ -152,6 +163,7 @@
                 @visit-user="visitUser" @generate-qr="qrInitialText = $event; activeApp = 'qr_generator'"
                 @close="activeApp = null"></eme-modular-app>
 
+            <eme-code-editor v-if="isEditorOpen" :auth="auth" :draft-id="editorDraftId"></eme-code-editor>
         </eme-shell-main>
     </div>
 
@@ -194,10 +206,35 @@
                     activeApp: null,
                     kbArticleId: null,
                     visitingUser: null,
-                    qrInitialText: ''
+                    qrInitialText: '',
+                    isEditorOpen: false,
+                    editorDraftId: null,
+                    isSyncing: false
                 }
             },
             methods: {
+                async syncGit() {
+                    this.isSyncing = true;
+                    try {
+                        const res = await fetch('/api/settings/git/sync/', {
+                            method: 'POST',
+                            headers: this.auth()
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            alert("Система оновлена: " + data.message);
+                            if (this.activeApp === 'apps_store') {
+                                // Refresh apps if in store
+                                // We'll need a way to trigger child refresh, but for now just alert
+                            }
+                        } else {
+                            alert("Помилка оновлення: " + data.error);
+                        }
+                    } catch (e) {
+                        alert("Помилка мережі при оновленні.");
+                    }
+                    this.isSyncing = false;
+                },
                 auth() {
                     const token = localStorage.getItem('access_token');
                     if (!token || token === 'undefined' || token === 'null') return {};
@@ -333,7 +370,7 @@
             'EmeGallery', 'EmeNetwork', 'EmeSettings', 'EmeProjects', 'EmeCloneMaster',
             'EmeProjectDetail', 'EmeKb', 'EmeChat', 'EmeQrGenerator', 'EmeParkAdventures', 'EmeParkAdventuresAdmin', 'EmeMafia',
             'EmeOmniTools', 'EmeMicrobin', 'EmeBookmarks', 'EmeMemos', 'EmeSysMon',
-            'EmeOpenWebUI', 'EmeVikunja', 'EmeSyncthing', 'EmeModularApp', 'EmeProfile', 'EmeIndexer', 'EmeAIBuilder', 'EmeUserwalllight', 'EmeUserwalllight1'
+            'EmeOpenWebUI', 'EmeVikunja', 'EmeSyncthing', 'EmeModularApp', 'EmeProfile', 'EmeIndexer', 'EmeAIBuilder', 'EmeCodeEditor', 'EmePreview', 'EmeUserwalllight', 'EmeUserwalllight1', 'EmeCalculator', 'EmeCalk', 'EmeGamepack000', 'EmeGamepack001', 'EmeGamepack002', 'EmeSnake', 'EmeSchultie', 'EmeGamepack003', 'EmeGamepack004', 'EmeGp005', 'EmeGp006', 'EmeSchulteTener', 'EmeHeroes001'
         ];
 
         components.forEach(name => {
@@ -351,7 +388,7 @@
     </script>
 
     <!-- Tabler JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script>
+    <script src="/static/libs/tabler/tabler.min.js"></script>
 </body>
 
 </html>

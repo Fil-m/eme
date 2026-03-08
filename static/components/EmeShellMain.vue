@@ -18,11 +18,20 @@
                     </button>
                 </div>
 
-                <div class="mt-auto pb-4">
-                    <button class="eme-nav-btn logout-btn" title="Вийти" @click="$emit('logout')">
+                <div class="mt-auto pb-4 px-3">
+                    <button class="eme-nav-btn w-100 mb-2" title="Оновити систему" @click="$root.syncGit()" :disabled="$root.isSyncing"
+                        style="background: rgba(40, 167, 69, 0.1); border: 1px solid rgba(40, 167, 69, 0.2);">
+                        <span class="nav-icon" v-if="!$root.isSyncing">🔄</span>
+                        <span class="spinner-border spinner-border-sm nav-icon" v-else></span>
+                        <span class="nav-label">Оновити</span>
+                    </button>
+                    <button class="eme-nav-btn logout-btn w-100" title="Вийти" @click="$emit('logout')">
                         <span class="nav-icon">🚪</span>
                         <span class="nav-label">Вийти</span>
                     </button>
+                    <div class="mt-2 text-center text-muted" style="font-size: 0.6rem; opacity: 0.5;">
+                        EME OS v1.1.0-sync
+                    </div>
                 </div>
             </nav>
         </div>

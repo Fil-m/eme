@@ -1,0 +1,13 @@
+# Generated 2026-03-08 16:04:32.513969
+toga-android>=0.4.0
+django==5.1.0
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+requests
+Pillow
+tzdata
+psutil
+requests
+beautifulsoup4
+toga-android>=0.4.0

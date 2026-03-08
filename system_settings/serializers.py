@@ -59,6 +59,6 @@ class UserAppLayoutSerializer(serializers.ModelSerializer):
 class AIDraftAppSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIDraftApp
-        fields = ['id', 'name', 'description', 'component_name', 'vue_code', 'is_published', 'created_at']
+        fields = ['id', 'name', 'description', 'component_name', 'vue_code', 'agent_prompt', 'skills', 'is_published', 'created_at']
         read_only_fields = ['id', 'is_published', 'created_at']
 

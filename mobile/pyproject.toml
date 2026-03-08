@@ -1,0 +1,54 @@
+[project]
+name = "eme_mobile"
+version = "2.1.0"
+description = "Decentralized Personal OS"
+authors = [
+    {name = "EME Team", email = "team@eme-os.org"},
+]
+license = {text = "MIT"}
+
+[tool.briefcase]
+project_name = "EME OS"
+bundle = "com.eme"
+version = "2.1.0"
+url = "https://eme-os.org"
+
+[tool.briefcase.app.eme_mobile]
+formal_name = "EME OS"
+description = "Decentralized Personal OS"
+icon = "src/eme_mobile/resources/eme_mobile"
+sources = ["src/eme_mobile"]
+requires = [
+    "toga-android>=0.4.0",
+    "django==5.1.0",
+    "djangorestframework",
+    "djangorestframework-simplejwt",
+    "django-cors-headers",
+    "requests",
+    "Pillow",
+    "tzdata",
+    "psutil",
+    "requests",
+    "beautifulsoup4",
+]
+
+[tool.briefcase.app.eme_mobile.macOS]
+requires = ["toga-cocoa>=0.4.0"]
+
+[tool.briefcase.app.eme_mobile.windows]
+requires = ["toga-winforms>=0.4.0"]
+
+[tool.briefcase.app.eme_mobile.linux]
+requires = ["toga-gtk>=0.4.0"]
+
+[tool.briefcase.app.eme_mobile.android]
+requires = ["toga-android>=0.4.0"]
+permissions = { "INTERNET" = true, "READ_EXTERNAL_STORAGE" = true, "WRITE_EXTERNAL_STORAGE" = true, "CAMERA" = true }
+build_gradle_dependencies = [
+    "androidx.appcompat:appcompat:1.0.2",
+    "androidx.constraintlayout:constraintlayout:1.1.3",
+    "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0",
+]
+
+[tool.briefcase.app.eme_mobile.web]
+requires = ["toga-web>=0.4.0"]
