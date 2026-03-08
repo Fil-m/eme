@@ -18,23 +18,28 @@ if [ ! -d "venv" ]; then
     echo "📦 Оновлюємо системні пакети..."
     pkg update -y && pkg upgrade -y
     
-    echo "🛠 Встановлюємо системні залежності (Media, XML, FFmpeg)..."
-    pkg install python python-numpy curl unzip git libjpeg-turbo libpng ffmpeg libxml2 libxslt -y
+    echo "🛠 Встановлюємо системні залежності та інструменти збірки..."
+    # Додаємо rust, binutils, openssl та libffi, щоб pip зміг сам зібрати складні пакети на будь-якому телефоні
+    pkg install python python-numpy curl unzip git libjpeg-turbo libpng ffmpeg libxml2 libxslt rust binutils openssl libffi -y
     
-    echo "🌐 Створюємо venv з доступом до системних пакетів (для швидкості)..."
+    # Виправляємо Android API level для компіляторів у Termux
+    export ANDROID_API_LEVEL=24
+    
+    echo "🌐 Створюємо venv..."
     python -m venv venv --system-site-packages
     source venv/bin/activate
     
-    echo "pip: Оновлюємо pip..."
-    pip install --upgrade pip
+    echo "pip: Оновлюємо інструменти..."
+    pip install --upgrade pip setuptools wheel
     
     echo "pip: Встановлюємо Python залежності..."
-    # Numpy вже встановлено системно, pip його пропустить або оновить швидко
     pip install -r requirements.txt
     
     echo "✅ Початкове налаштування завершено!"
 else
-source venv/bin/activate
+    source venv/bin/activate
+    # На всякий випадок експортуємо змінні і при звичайному запуску
+    export ANDROID_API_LEVEL=24
 fi
 
 echo "📦 Перевірка та оновлення залежностей..."

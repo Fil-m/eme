@@ -1,24 +1,25 @@
 # EME OS - GitHub Installer for Termux
 # Цей скрипт автоматизує розгортання прямо з GitHub.
 
-echo "📦 Налаштування Termux..."
+echo "📦 Початкове налаштування Termux..."
 termux-setup-storage
 pkg update -y && pkg upgrade -y
 
-echo "🌐 Клонування EME OS з GitHub..."
+# 1. Встановлення базових інструментів для клонування
+echo "💾 Встановлення Git..."
+pkg install git -y
 
-# 1. Встановлення системних пакетів
-pkg install git python openssl python-cryptography python-psutil python-pillow python-numpy -y
-
-# 2. Клонування
+# 2. Клонування репозиторію
 if [ ! -d "eme" ]; then
+    echo "🌐 Клонування репозиторію з GitHub..."
     git clone https://github.com/Fil-m/eme.git
     cd eme
 else
+    echo "🔄 Оновлення коду..."
     cd eme
     git pull
 fi
 
-# 3. Запуск основного скрипта
-echo "🚀 Запуск конфігурації..."
+# 3. Перехід до основного процесу
+echo "🚀 Запуск EME OS..."
 bash start.sh
