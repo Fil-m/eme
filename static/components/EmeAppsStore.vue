@@ -70,8 +70,12 @@
                                 </div>
                                 
                                 <!-- Management Actions for AI Apps -->
-                                <div v-if="app.category === 'ai_apps'" class="mt-3 d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-primary flex-grow-1" @click.stop="editApp(app)">
+                                <div v-if="app.category === 'ai_apps'" class="mt-3 d-flex gap-2" @click.stop>
+                                    <button class="btn btn-sm btn-outline-info" :disabled="isPushingAppId === app.id" @click="pushToGit(app)" title="Push to Git">
+                                        <span v-if="isPushingAppId === app.id" class="spinner-border spinner-border-sm"></span>
+                                        <span v-else>☁️</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary flex-grow-1" @click="editApp(app)">
                                         ✏️ Редагувати
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger" @click.stop="deleteApp(app)">
@@ -100,6 +104,7 @@ export default {
             currentCategory: 'all',
             isLoading: false,
             isSyncing: false,
+            isPushingAppId: null,
             apps: []
         };
     },
@@ -155,6 +160,27 @@ export default {
             } catch (e) {
                 alert("Помилка мережі.");
             }
+        },
+        async pushToGit(app) {
+            if (!app.draft_id) return;
+            this.isPushingAppId = app.id;
+            try {
+                const res = await fetch(`/api/settings/ai-builder/push/${app.draft_id}/`, {
+                    method: 'POST',
+                    headers: this.auth()
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message || "Додаток успішно відправлено в Git!");
+                } else {
+                    const error = await res.json();
+                    alert(error.error || "Помилка відправки в Git");
+                }
+            } catch (e) {
+                alert("Помилка підключення до сервера.");
+            }
+            this.isPushingAppId = null;
         }
     }
 }

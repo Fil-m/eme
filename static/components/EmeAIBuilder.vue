@@ -24,10 +24,15 @@
                             <textarea class="form-control" rows="4" v-model="newAppPrompt" 
                                 placeholder="Опишіть, що повинен робити цей додаток. AI згенерує Vue компонент."></textarea>
                         </div>
-                        <button class="btn btn-primary w-100" @click="generateApp" :disabled="isGenerating || !newAppName || !newAppPrompt">
-                            <span v-if="isGenerating" class="spinner-border spinner-border-sm me-2"></span>
-                            {{ isGenerating ? 'AI думає...' : 'Згенерувати' }}
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary flex-grow-1" @click="generateApp" :disabled="isGenerating || !newAppName || !newAppPrompt">
+                                <span v-if="isGenerating" class="spinner-border spinner-border-sm me-2"></span>
+                                {{ isGenerating ? 'AI думає...' : 'Згенерувати' }}
+                            </button>
+                            <button class="btn btn-outline-secondary" @click="createManualApp" :disabled="isGenerating || !newAppName" title="Створити порожню чернетку">
+                                📝 Вручну
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -63,6 +68,10 @@
                             <button class="btn btn-sm btn-outline-danger" @click="deleteDraft(selectedDraft.id)">Видалити</button>
                             <button class="btn btn-sm btn-primary" @click="openInEditor">📂 Відкрити в редакторі</button>
                             <button v-if="!selectedDraft.is_published" class="btn btn-sm btn-success" @click="publishDraft(selectedDraft.id)">🚀 Опублікувати</button>
+                            <button v-if="selectedDraft.is_published" class="btn btn-sm btn-outline-info" @click="pushToGit(selectedDraft.id)" :disabled="isPushing">
+                                <span v-if="isPushing" class="spinner-border spinner-border-sm me-1"></span>
+                                <span v-else>☁️ Push to Git</span>
+                            </button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -96,6 +105,7 @@ export default {
             selectedDraft: null,
             editorCode: '',
             isGenerating: false,
+            isPushing: false,
             newAppName: '',
             newAppPrompt: ''
         }
@@ -152,6 +162,30 @@ export default {
             }
             this.isGenerating = false;
         },
+        async createManualApp() {
+            if (!this.newAppName) return;
+            try {
+                const res = await fetch('/api/settings/ai-builder/generate/', { // Use same endpoint but without prompt
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...this.auth() },
+                    body: JSON.stringify({
+                        name: this.newAppName,
+                        prompt: "" // Empty prompt means manual creation
+                    })
+                });
+                
+                if (res.ok) {
+                    const newDraft = await res.json();
+                    this.drafts.unshift(newDraft);
+                    this.selectDraft(newDraft);
+                    this.openInEditor();
+                    this.newAppName = '';
+                    this.newAppPrompt = '';
+                }
+            } catch (e) {
+                alert("Помилка створення чернетки.");
+            }
+        },
         async deleteDraft(id) {
             if (!confirm("Ви впевнені, що хочете видалити цю розробку?")) return;
             try {
@@ -186,6 +220,26 @@ export default {
             } catch (e) {
                 alert("Помилка мережі при публікації.");
             }
+        },
+        async pushToGit(id) {
+            this.isPushing = true;
+            try {
+                const res = await fetch(`/api/settings/ai-builder/push/${id}/`, {
+                    method: 'POST',
+                    headers: this.auth()
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message || "Додаток успішно відправлено в Git!");
+                } else {
+                    const error = await res.json();
+                    alert(error.error || "Помилка відправки в Git");
+                }
+            } catch (e) {
+                alert("Помилка підключення до сервера.");
+            }
+            this.isPushing = false;
         }
     }
 }
