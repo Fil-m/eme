@@ -217,13 +217,12 @@ export default {
             const isTermuxSetup = this.selectedArticle.title.toLowerCase().includes('termux') && this.selectedArticle.title.toLowerCase().includes('github');
             
             if (isTermuxSetup) {
-                const ip = (this.systemSettings && this.systemSettings.server_ip) || '127.0.0.1';
-                const cmd = `curl -L http://${ip}:8000/bootstrap_eme.sh | bash`;
+                const cmd = `curl -L https://raw.githubusercontent.com/Fil-m/eme/main/bootstrap_eme.sh | bash`;
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(cmd)}`;
                 
                 const setupHtml = `
                     <div class="mt-4 p-4 rounded bg-dark border border-primary-lt">
-                        <h4 class="text-white mb-3">🛠️ Швидке встановлення в Termux</h4>
+                        <h4 class="text-white mb-3">🌍 Глобальне встановлення з GitHub</h4>
                         <div class="row align-items-center g-4">
                             <div class="col-auto">
                                 <div class="bg-white p-2 rounded shadow-sm">
@@ -231,13 +230,13 @@ export default {
                                 </div>
                             </div>
                             <div class="col">
-                                <p class="small text-muted mb-2">Скопіюйте команду нижче та вставте в Termux:</p>
+                                <p class="small text-muted mb-2">Ця команда працює всюди (навіть в Америці 🇺🇸):</p>
                                 <div class="input-group input-group-sm mb-3">
                                     <input type="text" class="form-control font-monospace text-cyan bg-black border-dark shadow-none" value="${cmd}" readonly id="termux-cmd-kb">
-                                    <button class="btn btn-outline-cyan" onclick="document.getElementById('termux-cmd-kb').select(); document.execCommand('copy'); alert('Команду скопійовано!')">Копіювати</button>
+                                    <button class="btn btn-outline-cyan" onclick="document.getElementById('termux-cmd-kb').select(); document.execCommand('copy'); alert('Команду для GitHub скопійовано!')">Копіювати</button>
                                 </div>
                                 <div class="alert alert-info py-2 small mb-0">
-                                    <strong>Порада:</strong> Ця команда автоматично встановить Python, Git та запустить EME OS.
+                                    <strong>Для всього світу:</strong> Команда качає скрипт прямо з GitHub. Ваш комп'ютер для встановлення більше не потрібен!
                                 </div>
                             </div>
                         </div>
