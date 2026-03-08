@@ -11,3 +11,4 @@ langdetect==1.0.9
 tzdata>=2023.3
 django-sslserver>=0.22
 psutil>=5.9.0
+pyOpenSSL>=23.2.0
