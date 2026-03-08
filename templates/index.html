@@ -105,7 +105,7 @@
                 @close="activeApp = null"></eme-clone-master>
 
             <eme-kb v-if="activeApp === 'kb'" :user="user" :auth="auth" :initial-article-id="kbArticleId"
-                @close="activeApp = null; kbArticleId = null"></eme-kb>
+                :system-settings="systemSettings" @close="activeApp = null; kbArticleId = null"></eme-kb>
 
             <eme-chat v-if="activeApp === 'chat'" :user="user" :auth="auth" @close="activeApp = null"></eme-chat>
 

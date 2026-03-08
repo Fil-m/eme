@@ -34,12 +34,15 @@ if [ ! -d "venv" ]; then
     
     echo "✅ Початкове налаштування завершено!"
 else
-    source venv/bin/activate
+source venv/bin/activate
 fi
 
-echo "🗄 Перевірка та налаштування бази даних..."
+echo "📦 Перевірка та оновлення залежностей..."
+# Завжди перевіряємо залежності, щоб автоматично додати нові (sslserver, psutil)
+pip install -r requirements.txt
+
+echo "🗄 Налаштування структури бази даних..."
 python manage.py migrate
-# python manage.py seed_nav # Вимкнено для запобігання втраті ручних змін
 
 # 3. Налаштування SSL та запуск сервера
 echo "🔐 Перевірка безпеки з'єднання..."

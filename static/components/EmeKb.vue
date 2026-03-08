@@ -169,7 +169,7 @@
 
 <script>
 export default {
-    props: ['user', 'auth', 'initialArticleId'],
+    props: ['user', 'auth', 'initialArticleId', 'systemSettings'],
     data() {
         return {
             loading: true,
@@ -212,6 +212,40 @@ export default {
         formattedContent() {
             if (!this.selectedArticle || !this.selectedArticle.content) return '';
             let text = this.selectedArticle.content;
+            
+            // Check if it's the official Termux Setup guide
+            const isTermuxSetup = this.selectedArticle.title.toLowerCase().includes('termux') && this.selectedArticle.title.toLowerCase().includes('github');
+            
+            if (isTermuxSetup) {
+                const ip = (this.systemSettings && this.systemSettings.server_ip) || '127.0.0.1';
+                const cmd = `curl -L http://${ip}:8000/bootstrap_eme.sh | bash`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(cmd)}`;
+                
+                const setupHtml = `
+                    <div class="mt-4 p-4 rounded bg-dark border border-primary-lt">
+                        <h4 class="text-white mb-3">🛠️ Швидке встановлення в Termux</h4>
+                        <div class="row align-items-center g-4">
+                            <div class="col-auto">
+                                <div class="bg-white p-2 rounded shadow-sm">
+                                    <img src="${qrUrl}" alt="Termux Setup" style="width:160px; height:160px; display:block;">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <p class="small text-muted mb-2">Скопіюйте команду нижче та вставте в Termux:</p>
+                                <div class="input-group input-group-sm mb-3">
+                                    <input type="text" class="form-control font-monospace text-cyan bg-black border-dark shadow-none" value="${cmd}" readonly id="termux-cmd-kb">
+                                    <button class="btn btn-outline-cyan" onclick="document.getElementById('termux-cmd-kb').select(); document.execCommand('copy'); alert('Команду скопійовано!')">Копіювати</button>
+                                </div>
+                                <div class="alert alert-info py-2 small mb-0">
+                                    <strong>Порада:</strong> Ця команда автоматично встановить Python, Git та запустить EME OS.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                text += setupHtml;
+            }
+
             if (!text.includes('<')) {
                 return text.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '<br>').join('');
             }
