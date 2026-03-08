@@ -35,8 +35,8 @@ def push_app_to_git(draft):
     branch_name = f"apps/{component_name.lower().replace('emegenerated', '')}"
     file_path = os.path.join('static', 'components', f"{component_name}.vue")
     
-    # 1. Stash any existing changes to system files to allow branch switching
-    run_git(['stash', 'push', '-m', f"EME Temporary stash before pushing {draft.name}"])
+    # 1. Stash all changes (including untracked files like NEW components)
+    run_git(['stash', 'push', '-u', '-m', f"EME Temporary stash before pushing {draft.name}"])
     
     current_branch = "main" # default fallback
     try:
@@ -64,7 +64,7 @@ def push_app_to_git(draft):
         
     finally:
         # 7. Always return to main and restore stash
-        run_git(['checkout', 'main'])
+        run_git(['checkout', '-f', 'main'])
         run_git(['stash', 'pop'])
 
 def auto_update_sync():
