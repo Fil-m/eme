@@ -8,32 +8,14 @@
                 </div>
 
                 <div class="nav-items-wrapper">
-                    <!-- DYNAMIC CUSTOM APPS (Pinned by user) -->
                     <button v-for="item in structuredNav" :key="item.item_id" class="eme-nav-btn"
                         :class="{ 'active': isActive(item) }" 
                         @click="handleAppClick(item)"
                         :title="item.label">
                         <div class="btn-indicator"></div>
-                        <span class="nav-icon">{{ item.icon }}</span>
-                        <span class="nav-label">{{ (item.label || '').slice(0, 8) }}</span>
+                        <span class="nav-icon" style="font-size: 1.6rem;">{{ item.icon }}</span>
+                        <span class="nav-label">{{ item.label }}</span>
                     </button>
-
-                    <!-- CORE APPS: APPS STORE AND SETTINGS AT BOTTOM -->
-                    <div class="mt-auto w-100 d-flex flex-column align-items-center">
-                        <button class="eme-nav-btn" :class="{ 'active': activeApp === 'apps_store' }" 
-                            @click="openApp('apps_store')" title="Магазин додатків">
-                            <div class="btn-indicator"></div>
-                            <span class="nav-icon">🛍️</span>
-                            <span class="nav-label">Додатки</span>
-                        </button>
-                        
-                        <button class="eme-nav-btn" :class="{ 'active': activeApp === 'settings' }" 
-                            @click="openApp('settings')" title="Налаштування">
-                            <div class="btn-indicator"></div>
-                            <span class="nav-icon">⚙️</span>
-                            <span class="nav-label">Налашт.</span>
-                        </button>
-                    </div>
                 </div>
 
                 <div class="mt-auto pb-4">
@@ -66,18 +48,24 @@ export default {
             return full.includes(this.activeApp);
         },
         structuredNav() {
-            let dockApps = [];
-            if (this.systemSettings && Array.isArray(this.systemSettings.dock_apps)) {
-                dockApps = this.systemSettings.dock_apps;
+            const dockApps = (this.systemSettings && this.systemSettings.dock_apps) || [];
+            if (dockApps.length === 0) {
+                return [
+                    { item_id: 'desktop', label: 'Домашня', icon: '🏠' },
+                    { item_id: 'apps_store', label: 'Маркет', icon: '🛍️' },
+                    { item_id: 'settings', label: 'Налашт.', icon: '⚙️' }
+                ];
             }
             
             const results = [];
             for (const id of dockApps) {
-                // Skip core apps (they are hardcoded now)
-                if (id === 'desktop' || id === 'apps_store' || id === 'settings') continue;
+                // Fixed core apps
+                if (id === 'desktop') { results.push({ item_id: 'desktop', label: 'Домашня', icon: '🏠' }); continue; }
+                if (id === 'apps_store') { results.push({ item_id: 'apps_store', label: 'Маркет', icon: '🛍️' }); continue; }
+                if (id === 'settings') { results.push({ item_id: 'settings', label: 'Налашт.', icon: '⚙️' }); continue; }
 
                 if (typeof id === 'string' && id.startsWith('custom_app_')) {
-                    if (this.customApps && Array.isArray(this.customApps)) {
+                    if (this.customApps) {
                         const appId = parseInt(id.replace('custom_app_', ''), 10);
                         const cApp = this.customApps.find(a => a.id === appId);
                         if (cApp) {
@@ -85,7 +73,6 @@ export default {
                         }
                     }
                 } else {
-                    // Legacy/Others
                     const legacy = (this.navItems || []).find(n => n.item_id === id);
                     if (legacy) results.push(legacy);
                 }
@@ -266,11 +253,14 @@ export default {
 }
 
 .nav-label {
-    font-size: 8px;
-    font-weight: 700;
+    font-size: 10px;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    opacity: 0.8;
+    opacity: 0.9;
+    margin-top: 4px;
+    text-align: center;
+    line-height: 1;
 }
 
 .logout-btn {

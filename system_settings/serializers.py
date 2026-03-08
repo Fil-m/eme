@@ -53,7 +53,7 @@ class CoreSettingsSerializer(serializers.ModelSerializer):
 class UserAppLayoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAppLayout
-        fields = ['id', 'name', 'icon', 'modules', 'created_at']
+        fields = ['id', 'name', 'icon', 'description', 'modules', 'order', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 class AIDraftAppSerializer(serializers.ModelSerializer):

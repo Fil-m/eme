@@ -17,7 +17,7 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link" :class="{active: settingsTab==='builder'}" href="#"
-                    @click.prevent="settingsTab='builder'; fetchCustomApps()">🛠 App Builder</a>
+                    @click.prevent="settingsTab='builder'; fetchCustomApps(); fetchPublishedModules()">🛠 App Builder</a>
             </li>
         </ul>
 
@@ -103,50 +103,49 @@
                     <hr class="my-4">
                     
                     <h3 class="card-title mb-3">Навігація (Dock)</h3>
-                    <p class="text-muted small">Оберіть модулі, які будуть відображатися на вашій бічній панелі. Порядок збережеться автоматично.</p>
-                    <div class="row g-2 mb-4">
-                        <div class="col-md-4 col-sm-6" v-for="item in navItemsAvailable" :key="item.item_id">
-                            <label class="form-check card card-radio p-3 border-0 bg-dark-lt h-100 mb-0">
+                    <p class="text-muted small">Перетягуйте або використовуйте стрілки, щоб змінити порядок додатків на бічній панелі. Тільки обрані відображаються.</p>
+                    
+                    <div class="list-group mb-4 border-0">
+                        <div v-for="(item, idx) in sortedDockItems" :key="item.item_id" 
+                            class="list-group-item bg-dark-lt d-flex align-items-center gap-3 mb-2 rounded border-primary-lt p-3"
+                            :class="{'opacity-50': !localSettings.dock_apps.includes(item.item_id)}"
+                            style="border:1px solid rgba(0, 229, 255, 0.1) !important;">
+                            
+                            <div class="form-check m-0">
                                 <input class="form-check-input" type="checkbox" :value="item.item_id" v-model="localSettings.dock_apps">
-                                <span class="form-check-label d-flex align-items-center gap-2">
-                                    <span style="font-size: 1.2rem;">{{ item.icon }}</span>
-                                    <span>{{ item.label }}</span>
-                                </span>
-                            </label>
+                            </div>
+
+                            <div class="flex-grow-1 d-flex flex-column">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="font-size: 1.5rem;">{{ item.icon }}</span>
+                                    <span class="fw-bold text-white fs-4">{{ item.label }}</span>
+                                    <span v-if="item.isCustom" class="badge bg-purple-lt ms-2">Мій додаток</span>
+                                </div>
+                                <div v-if="item.description" class="text-muted small opacity-75">{{ item.description }}</div>
+                            </div>
+
+                            <div class="d-flex gap-1" v-if="localSettings.dock_apps.includes(item.item_id)">
+                                <button class="btn btn-sm btn-ghost-info btn-icon" @click="moveDockItem(item.item_id, -1)" :disabled="idx === 0">↑</button>
+                                <button class="btn btn-sm btn-ghost-info btn-icon" @click="moveDockItem(item.item_id, 1)" :disabled="idx === sortedDockItems.length - 1">↓</button>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn btn-primary" @click="saveSystemSettings" :disabled="loading">
-                        Зберегти Навігацію
+
+                    <button class="btn btn-primary btn-lg shadow-sm" @click="saveSystemSettings" :disabled="loading">
+                        Зберегти налаштування панелі
                     </button>
                     
-                    <hr class="my-4">
-                    <h3 class="card-title mb-3">Мобільне розгортання</h3>
-                    <p class="text-muted small">Скануйте QR-код або скопіюйте команду нижче, щоб швидко розгорнути EME OS на вашому Android пристрої через Termux.</p>
-                    
-                    <div class="row align-items-center g-3">
-                        <div class="col-auto">
-                            <div class="p-2 bg-white rounded shadow-sm" style="width:160px;height:160px;">
-                                <img :src="qrUrl" alt="Termux Setup QR" style="width:100%;height:100%;">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="input-group mb-2">
-                                <input type="text" class="form-control form-control-sm bg-dark text-info font-monospace" readonly :value="termuxCommand">
-                                <button class="btn btn-sm btn-outline-info" @click="copyCommand">Копіювати</button>
-                            </div>
-                            <ol class="small text-muted ps-3 mb-0">
-                                <li>Відкрийте <b>Termux</b> на телефоні.</li>
-                                <li>Вставте скопійовану команду (або скануйте QR за посиланням).</li>
-                                <li>Натисніть <b>Enter</b> та дочекайтеся завершення.</li>
-                            </ol>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>
 
         <!-- App Builder tab -->
         <div v-if="settingsTab === 'builder'">
+            <div class="alert alert-info py-2 small d-flex justify-content-between align-items-center mb-3">
+                <span>Виявлено {{ publishedCount }} ШІ-модулів.</span>
+                <button class="btn btn-sm btn-ghost-info" @click="fetchPublishedModules">🔄 Оновити список</button>
+            </div>
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title m-0">Ваші Додатки (Custom Apps)</h3>
@@ -169,26 +168,57 @@
                             </div>
                         </div>
 
-                        <div class="row g-2 mb-3">
+                        <div class="row g-2 mb-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label">Назва додатка</label>
+                                <input type="text" class="form-control" v-model="editingApp.name" placeholder="Назва...">
+                            </div>
                             <div class="col-md-2">
                                 <label class="form-label">Іконка</label>
-                                <input type="text" class="form-control" v-model="editingApp.icon" placeholder="📱">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-dark-lt">{{ editingApp.icon || '📱' }}</span>
+                                    <select class="form-select px-2" v-model="editingApp.icon" style="max-width:60px;">
+                                        <option v-for="e in ['📱','🏠','💼','🎬','🎨','🚀','🔥','💎','⚡','🛠️','🧩','📦']" :key="e" :value="e">{{e}}</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-10">
-                                <label class="form-label">Назва (напр. "Моя Соцмережа")</label>
-                                <input type="text" class="form-control" v-model="editingApp.name">
+                            <div class="col-md-6">
+                                <div class="text-muted small mb-1">Або введіть свій емодзі:</div>
+                                <input type="text" class="form-control" v-model="editingApp.icon" maxlength="4" placeholder="📱">
                             </div>
                         </div>
-                        <label class="form-label">Оберіть модулі:</label>
-                        <div class="row g-2 mb-3">
-                            <div class="col-md-3 col-sm-4" v-for="mod in availableModulesForBuilder" :key="mod.id">
-                                <label class="form-check card card-radio p-2 border-0 h-100 mb-0">
-                                    <input class="form-check-input" type="checkbox" :value="mod.id" v-model="editingApp.modules">
-                                    <span class="form-check-label d-flex align-items-center gap-2 small">
+
+                        <div class="mb-3">
+                            <label class="form-label">Опис додатка</label>
+                            <textarea class="form-control" v-model="editingApp.description" rows="2" placeholder="Короткий опис можливостей..."></textarea>
+                        </div>
+
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Склад додатка (Модулі):</span>
+                            <span v-if="publishedCount > 0" class="badge bg-success-lt small">
+                                {{ publishedCount }} ШІ-модулів доступно
+                            </span>
+                        </label>
+                        
+                        <div class="list-group mb-3 editor-modules-list">
+                            <!-- Selected modules first (sortable) -->
+                            <div v-for="mod in modulesListForEditor" :key="mod.id" 
+                                class="list-group-item bg-dark-lt border-0 d-flex align-items-center gap-3 p-2 mb-1 rounded"
+                                :class="{'selected-module border-start border-primary border-4': editingApp.modules.includes(mod.id), 'opacity-50': !editingApp.modules.includes(mod.id)}">
+                                <input class="form-check-input m-0" type="checkbox" :value="mod.id" v-model="editingApp.modules">
+                                <div class="flex-grow-1 ps-2">
+                                    <div class="d-flex align-items-center gap-2">
                                         <span>{{ mod.icon }}</span>
-                                        <span>{{ mod.label }}</span>
-                                    </span>
-                                </label>
+                                        <span class="fw-bold">{{ mod.label }}</span>
+                                    </div>
+                                    <div class="text-muted" style="font-size:0.7rem;">{{ mod.desc || mod.id }}</div>
+                                </div>
+                                <div v-if="editingApp.modules.includes(mod.id)" class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-ghost-primary btn-icon" @click.stop="moveModule(mod.id, -1)" 
+                                        :disabled="editingApp.modules.indexOf(mod.id) === 0">↑</button>
+                                    <button class="btn btn-sm btn-ghost-primary btn-icon" @click.stop="moveModule(mod.id, 1)" 
+                                        :disabled="editingApp.modules.indexOf(mod.id) === editingApp.modules.length - 1">↓</button>
+                                </div>
                             </div>
                         </div>
                         <div class="d-flex gap-2">
@@ -198,15 +228,19 @@
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-md-6" v-for="app in customApps" :key="app.id">
-                            <div class="card shadow-sm border-0">
+                        <div class="col-md-6" v-for="app in localCustomApps" :key="app.id">
+                            <div class="card shadow-sm border-0 h-100">
                                 <div class="card-body p-3 d-flex align-items-start gap-3">
-                                    <div class="avatar avatar-md bg-primary-lt" style="font-size: 1.5rem;">{{ app.icon || '📱' }}</div>
+                                    <div class="avatar avatar-md bg-purple-lt" style="font-size: 1.5rem;">{{ app.icon || '📱' }}</div>
                                     <div class="flex-grow-1">
-                                        <div class="fw-bold">{{ app.name }}</div>
-                                        <div class="text-muted small mt-1">
-                                            Модулі: 
-                                            <span v-for="m in app.modules" :key="m" class="badge bg-secondary-lt me-1">{{ getModuleLabel(m) }}</span>
+                                        <div class="fw-bold d-flex align-items-center gap-2 text-white">
+                                            {{ app.name }}
+                                            <span v-if="localSettings.dock_apps.includes('custom_app_' + app.id)" class="badge bg-info-lt">В Dock</span>
+                                        </div>
+                                        <div class="text-muted small">{{ app.description }}</div>
+                                        <div class="text-muted" style="font-size:0.7rem; margin-top:4px;">
+                                            Склад: 
+                                            <span v-for="m in app.modules" :key="m" class="badge bg-dark-lt text-muted me-1">{{ getModuleLabel(m) }}</span>
                                         </div>
                                     </div>
                                     <div class="dropdown">
@@ -219,7 +253,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div v-if="!customApps.length && !editingApp" class="col-12 py-4 text-center text-muted border border-dashed rounded">
+                        <div v-if="!localCustomApps.length && !editingApp" class="col-12 py-4 text-center text-muted border border-dashed rounded">
                             У вас ще немає створених додатків. Натисніть "Створити", щоб зібрати свою першу збірку.
                         </div>
                     </div>
@@ -231,7 +265,7 @@
 
 <script>
 export default {
-    props: ['user', 'systemSettings', 'auth', 'navItems'],
+    props: ['user', 'systemSettings', 'auth', 'navItems', 'customAppsProp'],
     data() {
         return {
             settingsTab: 'profile',
@@ -240,7 +274,7 @@ export default {
             newSocial: { name: '', link: '' },
             localSettings: { dock_apps: [], ...this.systemSettings },
             copySuccess: false,
-            customApps: [],
+            localCustomApps: [...(this.customAppsProp || [])],
             fetchedPublishedModules: [],
             editingApp: null,
             appPresets: [
@@ -264,39 +298,78 @@ export default {
     computed: {
         availableModulesForBuilder() {
             const baseModules = [
-                { id: 'profile', label: 'Профіль', icon: '👤', comp: 'eme-profile' },
-                { id: 'network', label: 'Мережа (Mesh)', icon: '🌐', comp: 'eme-network' },
-                { id: 'chat', label: 'Чат', icon: '💬', comp: 'eme-chat' },
-                { id: 'gallery', label: 'Галерея (Перегляд)', icon: '🖼️', comp: 'eme-gallery' },
-                { id: 'indexer', label: 'Індексатор (Завантаження)', icon: '📤', comp: 'eme-indexer' },
-                { id: 'projects', label: 'Проєкти', icon: '📁', comp: 'eme-projects' },
-                { id: 'tasks', label: 'Завдання (Vikunja)', icon: '✅', comp: 'eme-vikunja' },
-                { id: 'memos', label: 'Нотатки (Memos)', icon: '📝', comp: 'eme-memos' },
-                { id: 'bookmarks', label: 'Закладки', icon: '🔖', comp: 'eme-bookmarks' },
-                { id: 'mafia', label: 'ШІ Мафія', icon: '🎭', comp: 'eme-mafia' },
-                { id: 'omnitools', label: 'OmniTools', icon: '🧰', comp: 'eme-omni-tools' },
-                { id: 'feed', label: 'Стіна (У розробці)', icon: '📰', comp: 'eme-feed' },
-                { id: 'aibuilder', label: 'AI App Builder', icon: '🤖', comp: 'eme-a-i-builder' },
+                { id: 'profile', label: 'Профіль', icon: '👤', comp: 'eme-profile', desc: 'Управління персональними даними та аватаром' },
+                { id: 'network', label: 'Мережа (Mesh)', icon: '🌐', comp: 'eme-network', desc: 'Зв’язок між нодами, децентралізований шеринг' },
+                { id: 'chat', label: 'Чат', icon: '💬', comp: 'eme-chat', desc: 'Приватні та групові повідомлення' },
+                { id: 'gallery', label: 'Галерея', icon: '🖼️', comp: 'eme-gallery', desc: 'Перегляд та менеджмент медіафайлів' },
+                { id: 'indexer', label: 'Індексатор', icon: '📤', comp: 'eme-indexer', desc: 'Завантаження та обробка локальних файлів' },
+                { id: 'projects', label: 'Проєкти', icon: '📁', comp: 'eme-projects', desc: 'Система керування знаннями та кодом' },
+                { id: 'tasks', label: 'Завдання', icon: '✅', comp: 'eme-vikunja', desc: 'To-do списки, інтегровані з Vikunja' },
+                { id: 'memos', label: 'Нотатки', icon: '📝', comp: 'eme-memos', desc: 'Думки та короткі записи (аналог Twitter/Threads)' },
+                { id: 'bookmarks', label: 'Закладки', icon: '🔖', comp: 'eme-bookmarks', desc: 'Збережені посилання та ресурси' },
+                { id: 'mafia', label: 'ШІ Мафія', icon: '🎭', comp: 'eme-mafia', desc: 'Інтерактивна гра з ШІ-агентами' },
+                { id: 'omnitools', label: 'OmniTools', icon: '🧰', comp: 'eme-omni-tools', desc: 'Набір корисних утиліт та інструментів ШІ' },
+                { id: 'feed', label: 'Стіна', icon: '📰', comp: 'eme-feed', desc: 'Глобальна стрічка подій mesh-мережі' },
+                { id: 'aibuilder', label: 'AI App Builder', icon: '🤖', comp: 'eme-a-i-builder', desc: 'Генерація нових Vue-компонентів за допомогою LLM' },
             ];
             
-            return [...baseModules, ...this.fetchedPublishedModules];
+            
+            // MERGE ALL SOURCES
+            const fromProp = (this.systemSettings && this.systemSettings.published_modules) ? this.systemSettings.published_modules : [];
+            const fromFetch = this.fetchedPublishedModules || [];
+            
+            // Deduplicate by ID
+            const uniqueMap = new Map();
+            fromProp.forEach(m => { if(m && m.id) uniqueMap.set(m.id, m); });
+            fromFetch.forEach(m => { if(m && m.id) uniqueMap.set(m.id, m); });
+            const uniquePublished = Array.from(uniqueMap.values());
+            
+            console.log("EME Builder Debug: Base=13, Published=", uniquePublished.length, uniquePublished);
+            
+            return [...baseModules, ...uniquePublished];
+        },
+        modulesListForEditor() {
+            if (!this.editingApp) return this.availableModulesForBuilder;
+            const selectedIds = this.editingApp.modules || [];
+            const all = this.availableModulesForBuilder;
+            
+            // Selected modules in their custom order
+            const selected = selectedIds.map(id => all.find(m => m.id === id)).filter(Boolean);
+            // Unselected modules remaining
+            const unselected = all.filter(m => !selectedIds.includes(m.id));
+            
+            return [...selected, ...unselected];
+        },
+        publishedCount() {
+            const m = this.availableModulesForBuilder;
+            return m.filter(x => !['profile','network','chat','gallery','indexer','projects','tasks','memos','bookmarks','mafia','omnitools','feed','aibuilder'].includes(x.id)).length;
         },
         navItemsAvailable() {
-            let items = [];
-            if (this.navItems) {
-                items = this.navItems.filter(i => !i.parent);
-            }
-            // Add custom apps to dock selection
-            if (this.customApps && this.customApps.length > 0) {
-                this.customApps.forEach(app => {
-                    items.push({
-                        item_id: 'custom_app_' + app.id,
-                        label: app.name,
-                        icon: app.icon || '📱'
-                    });
-                });
-            }
-            return items;
+            const core = [
+                { item_id: 'apps_store', label: 'Маркет', icon: '🛍️', description: 'Встановлення нових модулів та сервісів' },
+                { item_id: 'settings', label: 'Налашт.', icon: '⚙️', description: 'Профіль, теми та системні опції' }
+            ];
+            
+            const custom = (this.localCustomApps || []).map(app => ({
+                item_id: 'custom_app_' + app.id,
+                label: app.name,
+                icon: app.icon || '📱',
+                description: app.description || 'Власний додаток',
+                isCustom: true
+            }));
+            
+            return [...core, ...custom];
+        },
+        sortedDockItems() {
+            const all = this.navItemsAvailable;
+            const dock = this.localSettings.dock_apps || [];
+            
+            // Items in dock according to their order
+            const inDock = dock.map(id => all.find(x => x.item_id === id)).filter(Boolean);
+            // Items NOT in dock
+            const notInDock = all.filter(x => !dock.includes(x.item_id));
+            
+            return [...inDock, ...notInDock];
         },
         termuxCommand() {
             const ip = this.localSettings.server_ip || '127.0.0.1';
@@ -308,6 +381,7 @@ export default {
     },
     mounted() {
         this.fetchPublishedModules();
+        this.fetchCustomApps();
     },
     methods: {
         async fetchPublishedModules() {
@@ -322,6 +396,16 @@ export default {
             } catch (e) {
                 console.error("Failed to fetch published modules", e);
             }
+        },
+        async fetchCustomApps() {
+            try {
+                const res = await fetch('/api/settings/apps/', { headers: this.auth() });
+                const data = await res.json();
+                let results = data.results || data;
+                results.sort((a, b) => (a.order || 0) - (b.order || 0));
+                this.localCustomApps = results;
+                this.$emit('update:custom-apps', results);
+            } catch (e) { }
         },
         async saveProfile() {
             this.loading = true;
@@ -387,7 +471,10 @@ export default {
             try {
                 const res = await fetch('/api/settings/apps/', { headers: this.auth() });
                 const data = await res.json();
-                this.customApps = data.results || data;
+                let results = data.results || data;
+                // Sort by order
+                results.sort((a, b) => (a.order || 0) - (b.order || 0));
+                this.customApps = results;
             } catch (e) { }
         },
         createNewApp() {
@@ -433,13 +520,47 @@ export default {
                 }
             } catch (e) { }
         },
+        moveDockItem(itemId, direction) {
+            const dock = [...(this.localSettings.dock_apps || [])];
+            const idx = dock.indexOf(itemId);
+            if (idx === -1) return;
+            
+            const newIndex = idx + direction;
+            if (newIndex < 0 || newIndex >= dock.length) return;
+            
+            const temp = dock[idx];
+            dock[idx] = dock[newIndex];
+            dock[newIndex] = temp;
+            
+            this.localSettings.dock_apps = dock;
+        },
+        async updateAppOrder(app) {
+            try {
+                await fetch(`/api/settings/apps/${app.id}/`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', ...this.auth() },
+                    body: JSON.stringify({ order: app.order })
+                });
+            } catch (e) {}
+        },
+        moveModule(modId, direction) {
+            const idx = this.editingApp.modules.indexOf(modId);
+            if (idx === -1) return;
+            
+            const newIndex = idx + direction;
+            if (newIndex < 0 || newIndex >= this.editingApp.modules.length) return;
+            
+            const mods = [...this.editingApp.modules];
+            const temp = mods[idx];
+            mods[idx] = mods[newIndex];
+            mods[newIndex] = temp;
+            
+            this.editingApp.modules = [...mods];
+        },
         getModuleLabel(modId) {
             const m = this.availableModulesForBuilder.find(x => x.id === modId);
             return m ? m.label : modId;
         }
-    },
-    mounted() {
-        this.fetchCustomApps();
     }
 }
 </script>

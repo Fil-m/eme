@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import generics, permissions
 from .models import CoreSettings
 from .serializers import CoreSettingsSerializer
@@ -59,12 +60,23 @@ class AIAppGenerateView(APIView):
         slug = slugify(app_name).replace("-", " ").title().replace(" ", "")
         component_name = f"Eme{slug}" if not slug.startswith("Eme") else slug
 
+        # 0. Load EME AI Guide for context
+        guide_content = ""
+        guide_path = os.path.join(settings.BASE_DIR, 'docs', 'EME_AI_GUIDE.md')
+        if os.path.exists(guide_path):
+            try:
+                with open(guide_path, 'r', encoding='utf-8') as f:
+                    guide_content = f.read()
+            except:
+                pass
+
         system_prompt = (
             "You are an expert Vue.js developer building a module for EME OS. "
-            "Write exactly ONE valid Vue 3 Single File Component (.vue). Use standard HTML/CSS/JS with Composition API or Options API. "
-            "Use Bootstrap 5 classes for styling. The root element should ideally have the class 'eme-app-page'. "
+            "Write exactly ONE valid Vue 3 Single File Component (.vue). Use standard HTML/CSS/JS with Composition API. "
+            "Use Bootstrap 5 classes and EME-specific variables for styling. The root element MUST have the class 'eme-app-page'. "
             "Return ONLY the raw Vue code inside standard <template>, <script>, and <style> tags. "
-            "Do NOT return markdown formatting like ```vue, just the raw code. Do NOT add any explanations."
+            "Do NOT return markdown formatting like ```vue, just the raw code. Do NOT add any explanations.\n\n"
+            f"REFERENCE GUIDE AND API:\n{guide_content}"
         )
 
         full_prompt = f"{system_prompt}\n\nTask: {prompt}"

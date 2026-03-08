@@ -13,8 +13,8 @@
                         @click="handleAppClick(item)"
                         :title="item.label">
                         <div class="btn-indicator"></div>
-                        <span class="nav-icon">{{ item.icon }}</span>
-                        <span class="nav-label">{{ (item.label || '').slice(0, 8) }}</span>
+                        <span class="nav-icon" style="font-size: 1.6rem;">{{ item.icon }}</span>
+                        <span class="nav-label">{{ (item.label || '') }}</span>
                     </button>
                 </div>
 
@@ -48,11 +48,36 @@ export default {
             return full.includes(this.activeApp);
         },
         structuredNav() {
-            return [
-                { item_id: 'desktop', label: 'Робочий стіл', icon: '🖥️' },
-                { item_id: 'apps_store', label: 'Додатки', icon: '🛍️' },
-                { item_id: 'settings', label: 'Налаштування', icon: '⚙️' }
+            const core = [
+                { item_id: 'desktop', label: 'Домашня', icon: '🏠' },
+                { item_id: 'apps_store', label: 'Маркет', icon: '🛍️' },
+                { item_id: 'settings', label: 'Налашт.', icon: '⚙️' }
             ];
+            
+            const dockApps = (this.systemSettings && this.systemSettings.dock_apps) || [];
+            
+            // Map custom apps
+            const apps = (this.customApps || []).map(app => ({
+                item_id: 'custom_app_' + app.id,
+                label: app.name,
+                icon: app.icon || '📱',
+                isCustomApp: true,
+                appData: app,
+                order: app.order || 0
+            }));
+
+            let combined = [...core, ...apps];
+            
+            if (dockApps.length > 0) {
+                // If customized, show ONLY what is in dockApps, in that order
+                combined = combined.filter(c => dockApps.includes(c.item_id));
+                combined.sort((a, b) => dockApps.indexOf(a.item_id) - dockApps.indexOf(b.item_id));
+            } else {
+                // Default: sort by .order
+                combined.sort((a, b) => (a.order || 0) - (b.order || 0));
+            }
+
+            return combined;
         }
     },
     methods: {
@@ -220,11 +245,14 @@ export default {
 }
 
 .nav-label {
-    font-size: 8px;
-    font-weight: 700;
+    font-size: 10px;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    opacity: 0.8;
+    opacity: 0.9;
+    margin-top: 4px;
+    text-align: center;
+    line-height: 1;
 }
 
 .logout-btn {

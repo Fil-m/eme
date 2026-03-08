@@ -94,8 +94,8 @@
                 @close="activeApp = null"></eme-network>
 
             <eme-settings v-if="activeApp === 'settings'" v-model:user="user" v-model:system-settings="systemSettings"
-                :auth="auth" :nav-items="navItems" @refresh-user="loadInitialData"
-                @close="activeApp = null"></eme-settings>
+                :custom-apps-prop="customApps" @update:custom-apps="customApps = $event" :auth="auth"
+                :nav-items="navItems" @refresh-user="loadInitialData" @close="activeApp = null"></eme-settings>
 
             <eme-projects v-if="activeApp === 'projects'" :user="user" :auth="auth"
                 @close="activeApp = null"></eme-projects>
@@ -249,6 +249,15 @@
                     this.activeApp = 'my_page';
                 }
             },
+            watch: {
+                'systemSettings.theme'(newTheme) {
+                    if (newTheme) {
+                        document.documentElement.setAttribute('data-bs-theme', newTheme);
+                        // Save to body as well for some styles that might need it
+                        document.body.setAttribute('data-bs-theme', newTheme);
+                    }
+                }
+            },
             async mounted() {
                 const token = localStorage.getItem('access_token');
                 if (token && token !== 'undefined') {
@@ -272,7 +281,7 @@
             'EmeGallery', 'EmeNetwork', 'EmeSettings', 'EmeProjects', 'EmeCloneMaster',
             'EmeProjectDetail', 'EmeKb', 'EmeChat', 'EmeQrGenerator', 'EmeParkAdventures', 'EmeParkAdventuresAdmin', 'EmeMafia',
             'EmeOmniTools', 'EmeMicrobin', 'EmeBookmarks', 'EmeMemos', 'EmeSysMon',
-            'EmeOpenWebUI', 'EmeVikunja', 'EmeSyncthing', 'EmeModularApp', 'EmeProfile', 'EmeIndexer', 'EmeAIBuilder', 'EmeUserwalllight'
+            'EmeOpenWebUI', 'EmeVikunja', 'EmeSyncthing', 'EmeModularApp', 'EmeProfile', 'EmeIndexer', 'EmeAIBuilder', 'EmeUserwalllight', 'EmeUserwalllight1'
         ];
 
         components.forEach(name => {

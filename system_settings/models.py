@@ -28,15 +28,16 @@ class CoreSettings(models.Model):
     def __str__(self):
         return f"Settings for {self.user.username}"
 
-
 class UserAppLayout(models.Model):
     """Stores custom applications built by the user from available modules."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='app_layouts')
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=10, default='📱')
+    description = models.TextField(blank=True)
     
     # JSON list of module IDs (e.g., ['profile', 'gallery', 'feed'])
     modules = models.JSONField(default=list)
+    order = models.PositiveIntegerField(default=0)
     
     created_at = models.DateTimeField(auto_now_add=True)
 
