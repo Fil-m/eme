@@ -8,7 +8,7 @@ pkg update -y && pkg upgrade -y
 echo "🌐 Клонування EME OS з GitHub..."
 
 # 1. Встановлення системних пакетів
-pkg install git python openssl -y
+pkg install git python openssl python-cryptography python-psutil python-pillow python-numpy -y
 
 # 2. Клонування
 if [ ! -d "eme" ]; then
