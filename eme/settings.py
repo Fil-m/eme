@@ -1,5 +1,32 @@
-import os
 from pathlib import Path
+import os
+
+# Monkeypatch for Python 3.12+ compatibility with old ssl wrappers (like django-sslserver)
+import ssl
+if not hasattr(ssl, 'wrap_socket'):
+    def wrap_socket(sock, **kwargs):
+        # Create a default context for server side if not specified
+        purpose = ssl.Purpose.CLIENT_AUTH if kwargs.get('server_side', False) else ssl.Purpose.SERVER_AUTH
+        context = ssl.create_default_context(purpose)
+        
+        # Load cert if provided
+        certfile = kwargs.pop('certfile', None)
+        keyfile = kwargs.pop('keyfile', None)
+        if certfile:
+            context.load_cert_chain(certfile=certfile, keyfile=keyfile)
+        
+        # Pull parameters that wrap_socket used to take
+        server_side = kwargs.pop('server_side', False)
+        do_handshake_on_connect = kwargs.pop('do_handshake_on_connect', True)
+        suppress_ragged_eofs = kwargs.pop('suppress_ragged_eofs', True)
+        
+        return context.wrap_socket(
+            sock, 
+            server_side=server_side, 
+            do_handshake_on_connect=do_handshake_on_connect,
+            suppress_ragged_eofs=suppress_ragged_eofs
+        )
+    ssl.wrap_socket = wrap_socket
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
