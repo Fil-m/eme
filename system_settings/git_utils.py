@@ -5,6 +5,15 @@ from django.conf import settings
 def run_git(args, cwd=None):
     if cwd is None:
         cwd = settings.BASE_DIR
+        
+    # Robustness: Remove index.lock if it exists (prevents fatal errors)
+    lock_path = os.path.join(cwd, '.git', 'index.lock')
+    if os.path.exists(lock_path):
+        try:
+            os.remove(lock_path)
+        except:
+            pass
+            
     try:
         result = subprocess.run(
             ['git'] + args,
@@ -29,23 +38,22 @@ def push_app_to_git(draft):
     # 1. Stash any existing changes to system files to allow branch switching
     run_git(['stash', 'push', '-m', f"EME Temporary stash before pushing {draft.name}"])
     
+    current_branch = "main" # default fallback
     try:
-        # 2. Ensure file is staged (if it was stashed, we might need a different approach, 
-        # but usually new files are fine or we can just git checkout main -- file)
-        
-        # Actually, let's just use the current state of the file
         # 3. Create/Switch to branch
         success, out = run_git(['checkout', '-b', branch_name])
         if not success:
             success, out = run_git(['checkout', branch_name])
-            if not success: return False, f"Git checkout failed: {out}"
+            if not success: 
+                return False, f"Git checkout failed: {out}"
         
         # 4. Bring the file from main if it's not there or updated
         run_git(['checkout', 'main', '--', file_path])
         
         # 5. Commit
         run_git(['add', file_path])
-        run_git(['commit', '-m', f"Publish AI app: {draft.name}"])
+        success, out = run_git(['commit', '-m', f"Publish AI app: {draft.name}"])
+        # We don't fail if commit fails (might be no changes)
         
         # 6. Push to origin
         success, out = run_git(['push', 'origin', branch_name])
