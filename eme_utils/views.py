@@ -1,5 +1,4 @@
 import random
-import string
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -58,7 +57,7 @@ class PastebinSnippetViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         # generate short code
-        code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+        code = ''.join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=6))
         serializer.save(user_id=self.request.user.id, short_code=code)
 
     @action(detail=False, methods=['get'], url_path='by_code/(?P<code>[^/.]+)')
