@@ -49,20 +49,13 @@ export default {
         },
         structuredNav() {
             const dockApps = (this.systemSettings && this.systemSettings.dock_apps) || [];
-            if (dockApps.length === 0) {
-                return [
-                    { item_id: 'desktop', label: 'Домашня', icon: '🏠' },
-                    { item_id: 'apps_store', label: 'Маркет', icon: '🛍️' },
-                    { item_id: 'settings', label: 'Налашт.', icon: '⚙️' }
-                ];
-            }
             
             const results = [];
             for (const id of dockApps) {
-                // Fixed core apps
+                // Fixed core apps that we want at the bottom, so skip them here
+                if (id === 'apps_store' || id === 'settings') continue;
+
                 if (id === 'desktop') { results.push({ item_id: 'desktop', label: 'Домашня', icon: '🏠' }); continue; }
-                if (id === 'apps_store') { results.push({ item_id: 'apps_store', label: 'Маркет', icon: '🛍️' }); continue; }
-                if (id === 'settings') { results.push({ item_id: 'settings', label: 'Налашт.', icon: '⚙️' }); continue; }
 
                 if (typeof id === 'string' && id.startsWith('custom_app_')) {
                     if (this.customApps) {
@@ -77,6 +70,11 @@ export default {
                     if (legacy) results.push(legacy);
                 }
             }
+            
+            // Market and Settings ALWAYS at the bottom
+            results.push({ item_id: 'apps_store', label: 'Маркет', icon: '🛍️' });
+            results.push({ item_id: 'settings', label: 'Налашт.', icon: '⚙️' });
+            
             return results;
         }
     },

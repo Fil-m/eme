@@ -290,7 +290,7 @@ export default {
             handler(nv) {
                 this.localSettings = { ...nv };
                 if (!this.localSettings.dock_apps || this.localSettings.dock_apps.length === 0) {
-                    this.localSettings.dock_apps = ['desktop', 'apps_store', 'settings'];
+                    this.localSettings.dock_apps = ['desktop'];
                 }
             }
         }
@@ -346,8 +346,8 @@ export default {
         },
         navItemsAvailable() {
             const core = [
-                { item_id: 'apps_store', label: 'Маркет', icon: '🛍️', description: 'Встановлення нових модулів та сервісів' },
-                { item_id: 'settings', label: 'Налашт.', icon: '⚙️', description: 'Профіль, теми та системні опції' }
+                // Only desktop is optional now, Market and Settings are permanent
+                { item_id: 'desktop', label: 'Соціальна мережа', icon: '📱', description: 'Головний екран соціальної мережі' }
             ];
             
             const custom = (this.localCustomApps || []).map(app => ({

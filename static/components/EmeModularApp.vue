@@ -21,7 +21,7 @@
         <!-- Module Switcher -->
         <div class="modular-content position-relative" style="min-height:400px;">
             <component 
-                v-if="activeModuleObj && activeModuleObj.comp && activeModuleObj.comp !== 'eme-feed'" 
+                v-if="activeModuleObj && activeModuleObj.comp" 
                 :is="activeModuleObj.comp" 
                 :user="user" 
                 :visiting-user="null" 
@@ -32,18 +32,6 @@
                 @refresh-user="$emit('refresh-user')"
                 @close="$emit('close')">
             </component>
-
-            <div v-else-if="activeTab === 'profile' || (activeModuleObj && activeModuleObj.comp === 'eme-profile')" class="text-center py-5 module-placeholder">
-                <div style="font-size:3rem;">👤</div>
-                <div class="mt-2 fw-bold">Профіль</div>
-                <div class="text-muted mt-1">(У розробці: Модуль EmeProfile.vue)</div>
-            </div>
-
-            <div v-else-if="activeTab === 'feed' || (activeModuleObj && activeModuleObj.comp === 'eme-feed')" class="text-center py-5 module-placeholder">
-                <div style="font-size:3rem;">📰</div>
-                <div class="mt-2 fw-bold">Стрічка Новин</div>
-                <div class="text-muted mt-1">(У розробці: Модуль EmeFeed.vue)</div>
-            </div>
             
             <div v-else class="text-center py-5 module-placeholder">
                 <div style="font-size:3rem;">📦</div>
@@ -69,7 +57,7 @@ export default {
         allKnownModules() {
             const baseModules = [
                 { id: 'profile', label: 'Профіль', icon: '👤', comp: 'eme-profile' },
-                { id: 'feed', label: 'Стіна', icon: '📰', comp: 'eme-feed' },
+                { id: 'feed', label: 'Стіна', icon: '📰', comp: 'eme-userwalllight' },
                 { id: 'gallery', label: 'Галерея', icon: '🖼️', comp: 'eme-gallery' },
                 { id: 'chat', label: 'Чат', icon: '💬', comp: 'eme-chat' },
                 { id: 'network', label: 'Мережа', icon: '🌐', comp: 'eme-network' },

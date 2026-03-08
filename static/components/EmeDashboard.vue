@@ -42,7 +42,11 @@
 
 <script>
 export default {
-    props: ['user', 'auth', 'navItems'],
+    props: {
+        user: { type: Object, default: () => ({}) },
+        auth: { type: Function, default: () => ({}) },
+        navItems: { type: Array, default: () => [] }
+    },
     data() {
         return {
             layout: []

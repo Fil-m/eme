@@ -62,106 +62,94 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-
 export default {
-  props: ['user', 'auth'],
-  setup(props) {
-    const text = ref('');
-    const file = ref(null);
-    const imagePreview = ref(null);
-    const loading = ref(false);
-    const posts = ref([]);
-
-    // Імітація збереження "зв'язки" постів у localStorage або через API 
-    // В ідеалі це має бути окрема таблиця, але для швидкого модуля - локально або комбінуємо існуючі
-    const loadDrafts = () => {
-      const saved = localStorage.getItem('userwall_posts');
-      if (saved) posts.value = JSON.parse(saved);
-    };
-
-    const handleFileChange = (e) => {
-      const selected = e.target.files[0];
-      if (selected) {
-        file.value = selected;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          imagePreview.value = ev.target.result;
+    props: ['user', 'auth'],
+    data() {
+        return {
+            text: '',
+            file: null,
+            imagePreview: null,
+            loading: false,
+            posts: []
         };
-        reader.readAsDataURL(selected);
-      }
-    };
+    },
+    mounted() {
+        this.loadDrafts();
+    },
+    methods: {
+        getAuthHeaders() {
+            if (typeof this.auth === 'function') return this.auth();
+            return this.auth || {};
+        },
+        loadDrafts() {
+            try {
+                const saved = localStorage.getItem('userwall_posts');
+                if (saved) this.posts = JSON.parse(saved);
+            } catch (e) {
+                console.error("Load drafts error", e);
+            }
+        },
+        handleFileChange(e) {
+            const selected = e.target.files[0];
+            if (selected) {
+                this.file = selected;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    this.imagePreview = ev.target.result;
+                };
+                reader.readAsDataURL(selected);
+            }
+        },
+        async publishPost() {
+            if (!this.text && !this.file) return;
+            this.loading = true;
+            
+            try {
+                let imageUrl = '';
+                
+                if (this.file) {
+                    const formData = new FormData();
+                    formData.append('files', this.file);
+                    const res = await fetch('/api/media/files/bulk-upload/', {
+                        method: 'POST',
+                        headers: this.getAuthHeaders(),
+                        body: formData
+                    });
+                    imageUrl = this.imagePreview;
+                }
 
-    const publishPost = async () => {
-      if (!text.value && !file.value) return;
-      loading.value = true;
-      
-      try {
-        let imageUrl = '';
-        
-        // 1. Якщо є файл, завантажуємо його через API Медіа (Індексатор)
-        if (file.value) {
-          const formData = new FormData();
-          formData.append('files', file.value);
-          const res = await fetch('/api/media/files/bulk-upload/', {
-            method: 'POST',
-            headers: props.auth(),
-            body: formData
-          });
-          // У повноцінній версії ми б дістали ID або URL завантаженого файлу
-          // Для демо використовуємо base64 прев'ю
-          imageUrl = imagePreview.value;
+                if (this.text) {
+                    await fetch('/api/utils/memos/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...this.getAuthHeaders() },
+                        body: JSON.stringify({ content: this.text })
+                    });
+                }
+
+                this.posts.unshift({
+                    content: this.text,
+                    image_url: imageUrl,
+                    date: new Date().toISOString()
+                });
+
+                localStorage.setItem('userwall_posts', JSON.stringify(this.posts));
+                
+                this.text = '';
+                this.file = null;
+                this.imagePreview = null;
+
+            } catch (e) {
+                console.error('Publish error', e);
+                alert('Помилка при публікації: ' + e.message);
+            } finally {
+                this.loading = false;
+            }
+        },
+        deletePost(idx) {
+            this.posts.splice(idx, 1);
+            localStorage.setItem('userwall_posts', JSON.stringify(this.posts));
         }
-
-        // 2. Зберігаємо текст як нотатку через API Нотаток
-        if (text.value) {
-          await fetch('/api/utils/memos/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...props.auth() },
-            body: JSON.stringify({ content: text.value })
-          });
-        }
-
-        // Додаємо в локальний список для миттєвого відображення
-        posts.value.unshift({
-          content: text.value,
-          image_url: imageUrl,
-          date: new Date().toISOString()
-        });
-
-        localStorage.setItem('userwall_posts', JSON.stringify(posts.value));
-        
-        // Скидання форми
-        text.value = '';
-        file.value = null;
-        imagePreview.value = null;
-
-      } catch (e) {
-        console.error('Publish error', e);
-        alert('Помилка при публікації постів');
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    const deletePost = (idx) => {
-      posts.value.splice(idx, 1);
-      localStorage.setItem('userwall_posts', JSON.stringify(posts.value));
-    };
-
-    onMounted(loadDrafts);
-
-    return {
-      text,
-      file,
-      imagePreview,
-      loading,
-      posts,
-      handleFileChange,
-      publishPost,
-      deletePost
-    };
-  },
+    }
 };
 </script>
 

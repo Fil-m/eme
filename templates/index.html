@@ -74,7 +74,7 @@
         <!-- SCREEN: SHELL -->
         <eme-shell-main v-if="view === 'shell'" :nav-items="navItems" :system-settings="systemSettings"
             :custom-apps="customApps" v-model:active-app="activeApp" @logout="logout">
-            <!-- DASHBOARD (Shows when no active app) -->
+            <!-- DASHBOARD (Home) -->
             <eme-dashboard v-show="!activeApp" :user="user" :auth="auth" :nav-items="navItems"
                 @open-app="activeApp = $event"></eme-dashboard>
 
@@ -143,6 +143,9 @@
             <eme-syncthing v-if="activeApp === 'syncthing'" :user="user" :auth="auth"
                 @close="activeApp = null"></eme-syncthing>
 
+            <eme-a-i-builder v-if="activeApp === 'ai_builder'" :user="user" :auth="auth"
+                @close="activeApp = null"></eme-a-i-builder>
+
             <!-- DYNAMIC MODULAR APPS -->
             <eme-modular-app v-if="activeApp && typeof activeApp === 'object' && activeApp.type === 'custom_app'"
                 :user="user" :auth="auth" :app-config="activeApp" :system-settings="systemSettings"
@@ -188,7 +191,7 @@
                     navItems: [],
                     systemSettings: {},
                     customApps: [],
-                    activeApp: 'apps_store',
+                    activeApp: null,
                     kbArticleId: null,
                     visitingUser: null,
                     qrInitialText: ''
@@ -200,6 +203,26 @@
                     if (!token || token === 'undefined' || token === 'null') return {};
                     return { 'Authorization': 'Bearer ' + token };
                 },
+                async tryRefresh() {
+                    const refresh = localStorage.getItem('refresh_token');
+                    if (!refresh || refresh === 'undefined' || refresh === 'null') return false;
+                    try {
+                        const res = await fetch('/api/profiles/token/refresh/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ refresh })
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            localStorage.setItem('access_token', data.access);
+                            if (data.refresh) localStorage.setItem('refresh_token', data.refresh);
+                            return true;
+                        }
+                    } catch (e) {
+                        console.error("Refresh failed", e);
+                    }
+                    return false;
+                },
                 async loadInitialData() {
                     try {
                         const [uRes, navRes, setRes, appsRes] = await Promise.all([
@@ -210,10 +233,13 @@
                         ]);
 
                         if (uRes.status === 401 || navRes.status === 401 || setRes.status === 401) {
-                            console.warn("Token rejected (401). Forcing logout.");
-                            localStorage.removeItem('access_token');
-                            localStorage.removeItem('refresh_token');
-                            this.view = 'auth';
+                            console.warn("Token rejected (401). Attempting refresh...");
+                            const ok = await this.tryRefresh();
+                            if (ok) {
+                                return this.loadInitialData(); // Retry once
+                            }
+                            console.warn("Refresh failed. Forcing logout.");
+                            this.logout();
                             return;
                         }
 
@@ -222,7 +248,19 @@
                         this.navItems = navData.results || navData;
                         this.systemSettings = await setRes.json();
                         const appsData = await appsRes.json();
-                        this.customApps = appsData.results || appsData;
+                        this.customApps = Array.isArray(appsData.results) ? appsData.results : (Array.isArray(appsData) ? appsData : []);
+
+                        // Auto-open Social Network if no app active
+                        if (!this.activeApp && this.customApps.length > 0) {
+                            // Find by name (flexible check for encoding issues) or by being the latest social-like app
+                            const socialApp = this.customApps.find(a =>
+                                (a.name && a.name.includes("Соціальна")) ||
+                                (a.modules && a.modules.includes('profile') && a.modules.includes('feed'))
+                            );
+                            if (socialApp) {
+                                this.activeApp = { ...socialApp, type: 'custom_app' };
+                            }
+                        }
                     } catch (e) {
                         console.error('Data load error', e);
                         alert("Критична помилка завантаження даних EME OS: " + e.message);
@@ -260,16 +298,30 @@
             },
             async mounted() {
                 const token = localStorage.getItem('access_token');
-                if (token && token !== 'undefined') {
+                const refreshToken = localStorage.getItem('refresh_token');
+
+                if (token && token !== 'undefined' && token !== 'null') {
+                    // Try to load. If it fails with 401, loadInitialData will call tryRefresh
                     await this.loadInitialData();
-                    if (this.user.id && this.view !== 'auth') {
+
+                    if (this.user && this.user.id) {
                         this.view = 'shell';
                         // Heartbeat
                         setInterval(() => {
                             fetch('/api/network/heartbeat/', { method: 'POST', headers: this.auth() }).catch(() => { });
                         }, 30000);
                     } else {
-                        localStorage.removeItem('access_token');
+                        // If load failed and refresh didn't happen or failed
+                        this.view = 'auth';
+                    }
+                } else if (refreshToken && refreshToken !== 'undefined' && refreshToken !== 'null') {
+                    // We have a refresh token but no access token, try to recover
+                    const ok = await this.tryRefresh();
+                    if (ok) {
+                        await this.loadInitialData();
+                        if (this.user && this.user.id) {
+                            this.view = 'shell';
+                        }
                     }
                 }
             }

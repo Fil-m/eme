@@ -136,6 +136,15 @@ export default {
                     developer: 'EME Core'
                 },
                 {
+                    id: 'ai_builder',
+                    category: 'productivity',
+                    name: 'AI App Builder',
+                    description: 'Створення нових додатків за допомогою штучного інтелекту.',
+                    icon: '🪄',
+                    color: '#00e5ff',
+                    developer: 'EME Core'
+                },
+                {
                     id: 'gallery',
                     category: 'media',
                     name: 'Галерея',
